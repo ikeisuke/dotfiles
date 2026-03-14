@@ -1,0 +1,31 @@
+# Aliases
+# Note: Abbreviation-style shortcuts (ll, lt, gs, ga, etc.) are handled by
+# zeno.zsh snippets (apps/zeno/config.yml) for visible expansion.
+# Keep only transparent replacements and safety wrappers here.
+
+# Modern replacements (transparent - behave like the original command)
+if command -v eza >/dev/null 2>&1; then
+  alias ls='eza --icons --git'
+  alias la='eza --icons --git -a'
+  alias ll='eza --icons --git -l'
+  alias lla='eza --icons --git -la'
+  alias lt='eza --icons --git --tree'
+else
+  alias la='ls -a'
+  alias ll='ls -l'
+fi
+
+if command -v bat >/dev/null 2>&1; then
+  alias cat='bat --style=plain'
+fi
+
+# Safety aliases
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+
+# Convenience
+alias mkdir='mkdir -p'
+alias sudo='sudo '
+
+alias q='kiro-cli-chat'

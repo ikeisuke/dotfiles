@@ -1,0 +1,9 @@
+.idea
+.DS_Store
+.claude/settings.local.json
+.gocache
+.qdev-working-memory
+.amazonq/cli-todo-lists
+.amazonq/.subagents
+*.zwc
+.env

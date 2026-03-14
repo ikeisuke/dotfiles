@@ -1,0 +1,97 @@
+" Modern Vim Configuration with vim-plug
+" ===========================================
+
+" Basic Settings
+" ---------------
+set encoding=utf-8
+set viminfofile=~/.local/state/vim/viminfo
+set fileencodings=utf-8,euc-jp
+
+" Indentation
+set tabstop=2
+set shiftwidth=2
+set autoindent
+set expandtab
+
+" Display
+set number
+set list
+set listchars=tab:^\ ,trail:-
+set nobackup
+set noswapfile
+
+" Syntax highlighting
+syntax on
+filetype plugin indent on
+
+" PHP specific settings
+autocmd BufNewFile,BufRead *.php set tabstop=4 shiftwidth=4
+
+" Highlight fullwidth spaces (全角スペース可視化)
+function! ZenkakuSpace()
+  highlight ZenkakuSpace cterm=reverse ctermfg=DarkMagenta gui=reverse guifg=DarkMagenta
+endfunction
+
+if has('syntax')
+  augroup ZenkakuSpace
+    autocmd!
+    autocmd ColorScheme       * call ZenkakuSpace()
+    autocmd VimEnter,WinEnter * match ZenkakuSpace /　/
+  augroup END
+  call ZenkakuSpace()
+endif
+
+" Plugin Management with vim-plug
+" --------------------------------
+" Install vim-plug if not already installed
+let data_dir = has('nvim') ? stdpath('data') . '/site' : '~/.vim'
+if empty(glob(data_dir . '/autoload/plug.vim'))
+  silent execute '!curl -fLo '.data_dir.'/autoload/plug.vim --create-dirs  https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
+  autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
+endif
+
+" Plugin definitions
+call plug#begin('~/.vim/plugged')
+
+" Fuzzy finder (replaces unite.vim and ctrlp)
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+Plug 'junegunn/fzf.vim'
+
+" Git integration
+Plug 'tpope/vim-fugitive'
+Plug 'airblade/vim-gitgutter'
+
+" Editing helpers
+Plug 'tpope/vim-commentary'  " Comment toggling with gc
+Plug 'tpope/vim-surround'    " Surround operations
+
+" Color schemes
+Plug 'sainnhe/everforest'
+
+call plug#end()
+
+" Plugin Settings
+" ---------------
+
+" fzf.vim key mappings
+nnoremap <C-p> :Files<CR>
+nnoremap <leader>f :Files<CR>
+nnoremap <leader>b :Buffers<CR>
+nnoremap <leader>h :History<CR>
+nnoremap <leader>r :Rg<CR>
+nnoremap <leader>l :Lines<CR>
+
+" Colorscheme
+set background=dark
+try
+  colorscheme everforest
+catch
+  " Fallback if colorscheme not installed yet
+  colorscheme default
+endtry
+
+" vim-gitgutter settings
+set updatetime=100
+
+" Leader key
+let mapleader = ","

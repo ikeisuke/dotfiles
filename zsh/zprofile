@@ -1,0 +1,21 @@
+# .zprofile - Login shell setup
+# Executed for login shells before zshrc
+
+# Ensure path uniqueness
+typeset -U path PATH
+
+# Determine dotfiles directory
+DOTFILES_DIR=${${(%):-%N}:A:h}
+
+# Homebrew (must be loaded early, before other tools)
+[[ -f "$DOTFILES_DIR/tools/homebrew.zsh" ]] && source "$DOTFILES_DIR/tools/homebrew.zsh"
+
+# Cargo/Rust environment (XDG-compliant path)
+if [[ -f "${CARGO_HOME:-$HOME/.local/share/cargo}/env" ]]; then
+  . "${CARGO_HOME:-$HOME/.local/share/cargo}/env"
+fi
+
+# GPG
+if GPG_TTY=$(tty 2>/dev/null); then
+  export GPG_TTY
+fi

@@ -1,0 +1,67 @@
+# .zshrc - Interactive shell configuration
+# Modular zsh configuration - all logic is in separate modules
+
+# Determine dotfiles directory
+DOTFILES_DIR=${${(%):-%N}:A:h}
+export DOTFILES_DIR
+
+# Helper function to source files if they exist
+source_if_exists() {
+  [[ -f "$1" ]] && source "$1"
+}
+
+# Auto-recompile zsh files if needed (fast, only updates when changed)
+source_if_exists "$DOTFILES_DIR/lib/zcompile.zsh"
+
+# Load core library modules
+source_if_exists "$DOTFILES_DIR/lib/path.zsh"
+source_if_exists "$DOTFILES_DIR/lib/options.zsh"
+source_if_exists "$DOTFILES_DIR/lib/history.zsh"
+source_if_exists "$DOTFILES_DIR/lib/completion.zsh"
+source_if_exists "$DOTFILES_DIR/lib/keybinds.zsh"
+source_if_exists "$DOTFILES_DIR/lib/aliases.zsh"
+source_if_exists "$DOTFILES_DIR/lib/command_time.zsh"
+source_if_exists "$DOTFILES_DIR/lib/tab_title.zsh"
+
+# Environment variable for word characters
+export WORDCHARS='*?_-.[]~!#%^(){}<>|`@+:'
+
+# Load tool configurations
+source_if_exists "$DOTFILES_DIR/tools/volta.zsh"
+source_if_exists "$DOTFILES_DIR/tools/uv.zsh"
+source_if_exists "$DOTFILES_DIR/tools/go.zsh"
+source_if_exists "$DOTFILES_DIR/tools/ghq.zsh"
+source_if_exists "$DOTFILES_DIR/tools/zoxide.zsh"
+source_if_exists "$DOTFILES_DIR/tools/fzf.zsh"
+source_if_exists "$DOTFILES_DIR/tools/zeno.zsh"
+source_if_exists "$DOTFILES_DIR/tools/direnv.zsh"
+source_if_exists "$DOTFILES_DIR/tools/zsh-plugins.zsh"
+
+# Load OS-specific configuration
+case ${OSTYPE} in
+  darwin*)
+    source_if_exists "$DOTFILES_DIR/os/darwin.zsh"
+    ;;
+  linux*)
+    source_if_exists "$DOTFILES_DIR/os/linux.zsh"
+    ;;
+esac
+
+# Load integrations
+source_if_exists "$DOTFILES_DIR/integrations/tmux.zsh"
+source_if_exists "$DOTFILES_DIR/integrations/iterm2.zsh"
+source_if_exists "$DOTFILES_DIR/integrations/ai_command_fallback.zsh"
+
+# Load prompt (starship takes precedence over custom prompt)
+source_if_exists "$DOTFILES_DIR/tools/starship.zsh"
+if ! command -v starship >/dev/null 2>&1; then
+  # Fallback to custom prompt if starship not installed
+  source_if_exists "$DOTFILES_DIR/lib/vcs_info.zsh"
+  source_if_exists "$DOTFILES_DIR/lib/prompt.zsh"
+fi
+CDK_DISABLE_CLI_TELEMETRY=true
+
+# Load local customizations (if present)
+source_if_exists ~/.zshrc.local
+
+path_prepend "$HOME/.local/bin"

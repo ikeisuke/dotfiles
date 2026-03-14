@@ -1,0 +1,111 @@
+# Local Git Configuration Template
+# =================================
+# This file shows examples for configuring git on each machine.
+# The base configuration is in ~/.gitconfig (managed by dotfiles).
+# This file (~/.gitconfig.local) is for machine-specific and personal settings.
+
+# Basic Usage
+# -----------
+# setup.sh will create ~/.gitconfig.local with your name and email.
+# For most users, that's all you need!
+
+[user]
+  name = Your Name
+  email = your.email@example.com
+
+# Advanced: Directory-Specific Overrides
+# ----------------------------------------
+# Use includeIf to override settings for specific directories.
+# This is useful when you want different emails for work/personal projects.
+
+# Pattern 1: Company machine with personal projects
+# --------------------------------------------------
+# On your company machine, set company email as default:
+# [user]
+#   email = you@company.com
+#
+# Then override for personal projects:
+# [includeIf "gitdir:~/personal/"]
+#   path = ~/.gitconfig.personal
+#
+# Create ~/.gitconfig.personal with:
+# [user]
+#   email = personal@example.com
+
+# Pattern 2: Personal machine with work projects
+# -----------------------------------------------
+# On your personal machine, set personal email as default:
+# [user]
+#   email = personal@example.com
+#
+# Then override for work projects:
+# [includeIf "gitdir:~/work/"]
+#   path = ~/.gitconfig.work
+#
+# Create ~/.gitconfig.work with:
+# [user]
+#   email = you@company.com
+
+# Pattern 3: Multiple organizations
+# ----------------------------------
+# For contractors or people working with multiple companies:
+# [includeIf "gitdir:~/repos/github.com/company-a*/"]
+#   path = ~/.gitconfig.companyA
+# [includeIf "gitdir:~/repos/github.com/company-b*/"]
+#   path = ~/.gitconfig.companyB
+
+# includeIf Tips
+# --------------
+# - "gitdir:" matches the repository directory path
+# - Use "/" at the end to match all repos under that directory
+# - Use "*" for wildcard matching
+# - Case-insensitive: use "gitdir/i:" instead of "gitdir:"
+# - Later rules override earlier ones
+
+# SSH Signing (Recommended)
+# --------------------------
+# Modern alternative to GPG - uses your existing SSH key!
+#
+# 1. Add your SSH public key to GitHub as a "Signing Key":
+#    GitHub > Settings > SSH and GPG keys > New SSH key > Type: Signing Key
+#    Paste your public key: cat ~/.ssh/id_ed25519.pub
+#
+# 2. Uncomment these lines and update the path to your SSH public key:
+# [user]
+#   signingkey = ~/.ssh/id_ed25519.pub
+# [gpg]
+#   format = ssh
+# [commit]
+#   gpgsign = true
+# [tag]
+#   gpgsign = true
+#
+# Optional: For local signature verification, create ~/.config/git/allowed_signers:
+# your.email@example.com ssh-ed25519 AAAAC3Nza... (your public key)
+# Then add to this file:
+# [gpg "ssh"]
+#   allowedSignersFile = ~/.config/git/allowed_signers
+
+# Optional: GPG Signing (Traditional)
+# ------------------------------------
+# If you prefer GPG over SSH signing:
+# [user]
+#   signingkey = YOUR_GPG_KEY_ID
+# [gpg]
+#   format = openpgp
+# [commit]
+#   gpgsign = true
+
+# Optional: AWS CodeCommit
+# ------------------------
+# If you use AWS CodeCommit:
+# [credential "https://git-codecommit.us-east-1.amazonaws.com"]
+#   helper = !aws --profile YourProfile codecommit credential-helper $@
+#   UseHttpPath = true
+
+# Optional: Git Secrets
+# ---------------------
+# If you use git-secrets to prevent committing AWS keys:
+# [secrets]
+#   providers = git secrets --aws-provider
+#   patterns = (A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}

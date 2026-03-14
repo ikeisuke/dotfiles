@@ -1,0 +1,64 @@
+# Ghostty configuration
+# https://ghostty.org/docs/config/reference
+
+# --- Font ---
+# JetBrains Mono is embedded in Ghostty; Nerd Font glyphs are built-in
+font-family = JetBrains Mono
+font-size = 14
+font-thicken = true
+font-feature = -calt
+font-feature = -liga
+
+# --- Theme ---
+theme = dark:Everforest Dark Hard,light:Everforest Light Medium
+
+# --- Cursor ---
+cursor-style = block
+cursor-style-blink = false
+
+# --- Window ---
+macos-titlebar-style = tabs
+window-padding-x = 8
+window-padding-y = 8
+window-padding-balance = true
+background-opacity = 0.95
+background-blur = 20
+adjust-cell-height = 2
+resize-overlay = never
+window-save-state = always
+quit-after-last-window-closed = true
+
+# --- Shell Integration ---
+# no-cursor: starship manages cursor style; avoids tmux artifacts
+shell-integration = detect
+shell-integration-features = no-cursor,sudo,title
+
+# --- macOS ---
+# Left Option sends Alt sequences (required for fzf Alt+C)
+macos-option-as-alt = left
+
+# --- Performance ---
+scrollback-limit = 10485760
+window-vsync = true
+
+# --- Clipboard ---
+clipboard-read = ask
+clipboard-write = allow
+clipboard-paste-protection = true
+copy-on-select = false
+
+# --- Keybindings ---
+# Unbind cmd+1-9 tab switching (tmux manages windows)
+keybind = cmd+1=unbind
+keybind = cmd+2=unbind
+keybind = cmd+3=unbind
+keybind = cmd+4=unbind
+keybind = cmd+5=unbind
+keybind = cmd+6=unbind
+keybind = cmd+7=unbind
+keybind = cmd+8=unbind
+keybind = cmd+9=unbind
+keybind = cmd+d=unbind
+# Prompt jumping (shell integration markers)
+keybind = cmd+up=jump_to_prompt:-1
+keybind = cmd+down=jump_to_prompt:1

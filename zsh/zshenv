@@ -1,0 +1,30 @@
+# .zshenv - Minimal environment variables for all zsh invocations
+# Keep this file minimal - avoid heavy operations that slow down every shell
+
+export LANG=ja_JP.UTF-8
+export EDITOR=vim
+
+# Homebrew (Linuxbrew)
+if [[ -d "/home/linuxbrew/.linuxbrew" ]]; then
+  eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+fi
+
+# XDG Base Directory Specification
+# https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
+export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_CACHE_HOME="$HOME/.cache"
+export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_STATE_HOME="$HOME/.local/state"
+export CARGO_HOME="$XDG_DATA_HOME/cargo"
+export RUSTUP_HOME="$XDG_DATA_HOME/rustup"
+export LESSHISTFILE="-"
+export NPM_CONFIG_USERCONFIG="$XDG_CONFIG_HOME/npm/npmrc"
+export NPM_CONFIG_CACHE="$XDG_CACHE_HOME/npm"
+export PSQL_HISTORY="$XDG_DATA_HOME/postgresql/psql_history"
+export PYTHONSTARTUP="$XDG_CONFIG_HOME/python/pythonrc"
+export NODE_REPL_HISTORY="$XDG_DATA_HOME/node/repl_history"
+export PULUMI_HOME="$XDG_DATA_HOME/pulumi"
+export DENO_DIR="$XDG_CACHE_HOME/deno"
+export DENO_INSTALL="$HOME/.deno"
+export PATH="$DENO_INSTALL/bin:$PATH"
+# export ZDOTDIR="$XDG_CONFIG_HOME/zsh"

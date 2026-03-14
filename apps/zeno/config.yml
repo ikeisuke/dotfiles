@@ -1,0 +1,131 @@
+# zeno.zsh configuration
+# https://github.com/yuki-yano/zeno.zsh
+#
+# 方針:
+#   - スニペット: 手癖レベルの頻出コマンドだけ（覚えなくていい数）
+#   - 補完: タイプし始めたら候補が出る → 覚える必要なし
+
+snippets:
+  # Git (本当に毎日使うものだけ)
+  - keyword: gs
+    snippet: git status
+  - keyword: gc
+    snippet: "git commit -m '{{}}'"
+  - keyword: gd
+    snippet: git diff
+  - keyword: gp
+    snippet: git push
+  - keyword: gpl
+    snippet: git pull
+
+  # Docker
+  - keyword: dkc
+    snippet: docker compose
+
+  # Kiro CLI
+  - keyword: q
+    snippet: kiro-cli-chat
+
+completions:
+  # ── Git ─────────────────────────────────────────────
+  - name: "git add: changed files"
+    patterns:
+      - "^git add\\s"
+    sourceCommand: "git diff --name-only && git ls-files --others --exclude-standard"
+    options:
+      "--prompt": "'add> '"
+      "--preview": "'git diff --color=always -- {} 2>/dev/null || bat --color=always {}'"
+
+  - name: "git switch: local branches"
+    patterns:
+      - "^git switch\\s"
+    sourceCommand: "git branch --format='%(refname:short)' | sort"
+    options:
+      "--prompt": "'branch> '"
+
+  - name: "git checkout: all branches"
+    patterns:
+      - "^git checkout\\s"
+    sourceCommand: "git branch -a --format='%(refname:short)' | sort"
+    options:
+      "--prompt": "'branch> '"
+
+  - name: "git branch -d: delete branch"
+    patterns:
+      - "^git branch -d\\s"
+      - "^git branch -D\\s"
+    sourceCommand: "git branch --format='%(refname:short)' | sort"
+    options:
+      "--prompt": "'delete branch> '"
+
+  - name: "git rebase: onto branch"
+    patterns:
+      - "^git rebase\\s"
+    sourceCommand: "git branch --format='%(refname:short)' | sort"
+    options:
+      "--prompt": "'rebase onto> '"
+
+  - name: "git restore: unstage/discard"
+    patterns:
+      - "^git restore\\s"
+    sourceCommand: "git diff --name-only && git diff --staged --name-only"
+    options:
+      "--prompt": "'restore> '"
+
+  - name: "git stash: list stashes"
+    patterns:
+      - "^git stash apply\\s"
+      - "^git stash pop\\s"
+      - "^git stash drop\\s"
+    sourceCommand: "git stash list"
+    options:
+      "--prompt": "'stash> '"
+
+  - name: "git diff: changed files"
+    patterns:
+      - "^git diff\\s"
+    sourceCommand: "git diff --name-only && git diff --staged --name-only"
+    options:
+      "--prompt": "'diff> '"
+
+  # ── Docker ──────────────────────────────────────────
+  - name: "docker compose: services"
+    patterns:
+      - "^docker compose .+\\s"
+    sourceCommand: "docker compose config --services 2>/dev/null"
+    options:
+      "--prompt": "'service> '"
+
+  # ── Brew ────────────────────────────────────────────
+  - name: "brew install: search"
+    patterns:
+      - "^brew install\\s"
+    sourceCommand: "brew formulae"
+    options:
+      "--prompt": "'formula> '"
+
+  - name: "brew uninstall: installed"
+    patterns:
+      - "^brew uninstall\\s"
+      - "^brew remove\\s"
+    sourceCommand: "brew list --formula"
+    options:
+      "--prompt": "'uninstall> '"
+
+  # ── Kill ────────────────────────────────────────────
+  - name: "kill: running processes"
+    patterns:
+      - "^kill\\s"
+    sourceCommand: "ps -eo pid,comm | tail -n +2 | sort -k2"
+    options:
+      "--prompt": "'kill> '"
+
+  # ── Kiro CLI ────────────────────────────────────────
+  - name: "kiro agent completion"
+    patterns:
+      - "^kiro-cli-chat( chat)? --agent\\s"
+      - "^kiro-cli( chat)? --agent\\s"
+      - "^q( chat)? --agent\\s"
+    sourceCommand: "find ~/.kiro/agents .kiro/agents -name '*.json' 2>/dev/null | while read -r f; do basename \"$f\" .json; done | sort -u"
+    options:
+      "--prompt": "'agent> '"
