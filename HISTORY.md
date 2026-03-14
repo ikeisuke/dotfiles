@@ -1,5 +1,74 @@
 # Change History
 
+## 2026-03-14 モダン化: mise 移行・起動高速化・Git 強化・fzf config・ドキュメント分割
+
+### zsh/tools/mise.zsh (新規)
+- mise の shell 有効化を追加（`eval "$(mise activate zsh)"`）
+- Brewfile に `mise` があったがシェルで未有効化だったバグを修正
+
+### zsh/tools/volta.zsh (削除)
+- mise に完全移行のため Volta を削除
+
+### Brewfile
+- `volta` と `node` (Homebrew 版) を削除、`mise` に一本化
+- `lazygit` を追加
+
+### apps/git/gitconfig
+- `[rebase] autosquash = true` を追加（fixup コミットの自動整列）
+- エイリアス追加: `fixup`, `amend`, `unstage`, `last`, `wt`, `sync`
+
+### apps/fzf/fzfrc (新規)
+- fzf のデフォルトオプションをネイティブ config ファイルに分離
+- Everforest テーマカラー、レイアウト設定
+
+### zsh/tools/fzf.zsh
+- `FZF_DEFAULT_OPTS_FILE` によるネイティブ config 読み込みを追加
+
+### zsh/lib/profile.zsh (新規)
+- `ZSH_PROFILE=1 zsh -i -c exit` でプロファイリング可能に
+- `zsh-profile` コマンドを追加
+
+### zsh/lib/zcompile.zsh
+- 毎回の zrecompile チェックを1日1回に最適化（マーカーファイル方式）
+- 起動速度の改善（zprof で 38% を占めていた）
+
+### zsh/tools/uv.zsh
+- `eval "$(uv generate-shell-completion zsh)"` をファイルキャッシュ化
+- uv バイナリ更新時のみ再生成
+
+### setup.sh
+- fzf config の symlink を追加
+
+### README.md
+- 278 行 → 約 100 行に圧縮。詳細は docs/ に分離
+- Structure にドキュメントリンク表を追加
+- 開発ツール表、設定詳細は各 docs ファイルに移動
+
+### docs/ (新規)
+- `docs/zsh.md`: Zsh 設定詳細（プラグイン、キーバインド、エイリアス、起動高速化）
+- `docs/git.md`: Git 設定詳細（エイリアス、fixup ワークフロー、worktree の使い方）
+- `docs/git-local.md`: `apps/git/README.md` から移動（includeIf パターン）
+- `docs/tmux.md`: `apps/tmux/README.md` から移動（セッション永続化、iTerm2 統合）
+- `docs/terminal.md`: ターミナル & エディタ（Ghostty、iTerm2、Starship、Vim）
+- `docs/tools.md`: 開発ツール（mise、lazygit、fzf、AI CLI ツール、ユーティリティ）
+
+### zsh/tools/zsh-plugins.zsh
+- Homebrew 依存から git-clone パターンに移行（zeno と同じ方式）
+- `$XDG_DATA_HOME/zsh/plugins/` にクローン、`update-zsh-plugins` で一括更新
+- Linux (Homebrew なし) でもプラグインが動作するように
+
+### Brewfile
+- `zsh-autosuggestions`, `zsh-fast-syntax-highlighting` を削除（git-clone に移行）
+
+### .github/workflows/lint.yml (新規)
+- shellcheck による setup.sh の lint
+- `zsh -n` による全 zsh ファイルのシンタックスチェック
+
+### ドリフト修正
+- `docs/zsh.md`: `lla`, `mkdir`, `sudo` エイリアスを追記
+- `zsh/lib/aliases.zsh`: `q` エイリアスの重複に意図を示すコメントを追加
+- `README.md`: Structure ツリーから volta の残留参照を修正
+
 ## 2026-03-12 公開準備: gcd 統合・README 更新・setup.sh 出力改善
 
 ### zsh/functions/gcd.zsh (削除)

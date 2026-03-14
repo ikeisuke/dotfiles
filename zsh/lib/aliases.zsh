@@ -28,4 +28,5 @@ alias mv='mv -i'
 alias mkdir='mkdir -p'
 alias sudo='sudo '
 
+# Fallback for when zeno is not available (zeno snippet also defines q → kiro-cli-chat)
 alias q='kiro-cli-chat'

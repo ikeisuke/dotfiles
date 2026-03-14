@@ -57,6 +57,7 @@
 
 [rebase]
   autostash = true
+  autosquash = true
 
 [pull]
   rebase = true
@@ -76,6 +77,12 @@
   rp = remote prune origin
   fo = fetch origin
   lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+  fixup = commit --fixup
+  amend = commit --amend --no-edit
+  unstage = reset HEAD --
+  last = log -1 HEAD
+  wt = worktree
+  sync = !git pull --rebase && git push
 
 [help]
   autocorrect = prompt

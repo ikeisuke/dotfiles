@@ -2,6 +2,11 @@
 # https://github.com/junegunn/fzf
 
 if command -v fzf >/dev/null 2>&1; then
+  # Load fzf default options from config file (fzf 0.48+)
+  if [[ -f "${DOTFILES_DIR:h}/apps/fzf/fzfrc" ]]; then
+    export FZF_DEFAULT_OPTS_FILE="${DOTFILES_DIR:h}/apps/fzf/fzfrc"
+  fi
+
   # Use fd for faster file search if available
   if command -v fd >/dev/null 2>&1; then
     export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'

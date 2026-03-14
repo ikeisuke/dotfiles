@@ -1,0 +1,14 @@
+# fzf default options
+# https://github.com/junegunn/fzf
+# Shell integration options (Ctrl+T/Alt+C/Ctrl+R) are in zsh/tools/fzf.zsh
+
+# Layout
+--height=80%
+--layout=reverse
+--border=rounded
+--info=inline
+
+# Colors (Everforest-inspired)
+--color=bg+:#3c3836,bg:#282828,spinner:#83c092,hl:#83c092
+--color=fg:#d3c6aa,header:#83c092,info:#d699b6,pointer:#83c092
+--color=marker:#83c092,fg+:#d3c6aa,prompt:#d699b6,hl+:#83c092

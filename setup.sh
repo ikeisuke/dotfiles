@@ -276,6 +276,12 @@ if [ -d "$DIR/apps/zeno" ]; then
   link_and_backup "$DIR/apps/zeno/config.yml" ~/.config/zeno/config.yml
 fi
 
+# fzf
+if [ -d "$DIR/apps/fzf" ]; then
+  mkdir -p ~/.config/fzf
+  link_and_backup "$DIR/apps/fzf/fzfrc" ~/.config/fzf/fzfrc
+fi
+
 # Ghostty
 if [ -d "$DIR/apps/ghostty" ]; then
   mkdir -p ~/.config/ghostty

@@ -10,6 +10,9 @@ source_if_exists() {
   [[ -f "$1" ]] && source "$1"
 }
 
+# Profiling support (ZSH_PROFILE=1 zsh -i -c exit)
+source_if_exists "$DOTFILES_DIR/lib/profile.zsh"
+
 # Auto-recompile zsh files if needed (fast, only updates when changed)
 source_if_exists "$DOTFILES_DIR/lib/zcompile.zsh"
 
@@ -27,7 +30,7 @@ source_if_exists "$DOTFILES_DIR/lib/tab_title.zsh"
 export WORDCHARS='*?_-.[]~!#%^(){}<>|`@+:'
 
 # Load tool configurations
-source_if_exists "$DOTFILES_DIR/tools/volta.zsh"
+source_if_exists "$DOTFILES_DIR/tools/mise.zsh"
 source_if_exists "$DOTFILES_DIR/tools/uv.zsh"
 source_if_exists "$DOTFILES_DIR/tools/go.zsh"
 source_if_exists "$DOTFILES_DIR/tools/ghq.zsh"

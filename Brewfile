@@ -19,9 +19,7 @@ brew "ghq"      # Repository management
 brew "zoxide"   # Smart cd
 
 # Version managers & runtimes
-brew "mise"     # Polyglot runtime manager (replacing volta)
-brew "volta"    # Node.js version manager (legacy, migrating to mise)
-brew "node"     # Node.js (Homebrew version)
+brew "mise"     # Polyglot runtime manager
 brew "uv"       # Python package & version manager
 brew "python@3.14"  # Latest Python
 brew "go"       # Go language
@@ -42,11 +40,12 @@ brew "jq"       # JSON processor
 brew "dasel"    # JSON/YAML/TOML/XML processor
 brew "gh"       # GitHub CLI
 brew "jj"       # Git-compatible VCS (jujutsu)
+brew "lazygit"  # Terminal UI for git
 brew "awscli"   # AWS CLI
 brew "aws-cdk"  # AWS CDK
 brew "pulumi"   # Infrastructure as Code tool
-brew "zsh-autosuggestions"  # Fish-like autosuggestions
-brew "zsh-fast-syntax-highlighting"  # Command syntax highlighting
+# zsh-autosuggestions / zsh-fast-syntax-highlighting are managed via git clone
+# (see zsh/tools/zsh-plugins.zsh) for cross-platform portability
 
 # AI tools (cross-platform)
 cask "codex"          # OpenAI Codex CLI
