@@ -261,8 +261,23 @@ fi
 # Claude Code
 if [ -d "$DIR/apps/claude" ]; then
   mkdir -p ~/.claude
+  link_and_backup "$DIR/apps/claude/CLAUDE.md" ~/.claude/CLAUDE.md
   link_and_backup "$DIR/apps/claude/settings.json" ~/.claude/settings.json
   link_and_backup "$DIR/apps/claude/keybindings.json" ~/.claude/keybindings.json
+
+  # Install/update plugins
+  if command -v claude >/dev/null 2>&1; then
+    if claude plugins list 2>/dev/null | grep -q 'ikeisuke-skills'; then
+      echo "  Updating claude-skills plugin..."
+      claude plugins update tools@ikeisuke-skills 2>/dev/null || true
+    else
+      echo "  Installing claude-skills plugin..."
+      claude plugins marketplace add \
+        https://raw.githubusercontent.com/ikeisuke/claude-skills/main/.claude-plugin/marketplace.json 2>/dev/null || true
+      claude plugins install tools@ikeisuke-skills 2>/dev/null || true
+    fi
+    echo "  ✓ Claude Code plugins configured"
+  fi
 fi
 
 # GitHub CLI

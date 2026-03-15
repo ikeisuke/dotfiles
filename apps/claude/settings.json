@@ -15,6 +15,17 @@
   },
   "enabledMcpjsonServers": [],
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | jq -r '.command' | grep -q '\\$(' ; then echo 'Use -m flag instead of $() for shell commands' >&2; exit 2; fi"
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "hooks": [

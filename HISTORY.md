@@ -1,5 +1,20 @@
 # Change History
 
+## 2026-03-15 CLAUDE.md を dotfiles 管理に追加
+
+### apps/claude/CLAUDE.md (新規)
+- `~/.claude/CLAUDE.md`（グローバル指示）を dotfiles で管理開始
+- 既存の2セクション（シェルエイリアス回避、セッションタイトル自動設定）を移行
+- 新規セクション追加: `$(...)` コマンド置換の回避ルール（allow ルールの安全ヒューリスティクス対策）
+
+### apps/claude/settings.json
+- PreToolUse フック追加: `$(...)` を含む Bash コマンドをブロック（exit 2）し `-m` フラグ形式へリトライさせる
+- ref: https://github.com/anthropics/claude-code/issues/31373
+
+### setup.sh
+- Claude Code セクションに `CLAUDE.md` のシンボリックリンクを追加
+- `claude plugins install/update` によるプラグイン管理を追加（新規マシン対応）
+
 ## 2026-03-15 Claude Code settings.json を dotfiles 管理に追加
 
 ### apps/claude/settings.json (新規)
