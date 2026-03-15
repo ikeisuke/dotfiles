@@ -1,0 +1,44 @@
+{
+  "cleanupPeriodDays": 9999,
+  "env": {
+    "CLAUDE_CODE_MONITOR_GHOSTTY_ASKED": "1",
+    "CLAUDE_CODE_DISABLE_TERMINAL_TITLE": "1",
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "20"
+  },
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "permissions": {
+    "allow": [],
+    "defaultMode": "default"
+  },
+  "enabledMcpjsonServers": [],
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/plugins/marketplaces/ikeisuke-skills/skills/session-title/bin/session-title.sh \"$(basename \"$(git rev-parse --show-toplevel 2>/dev/null)\" 2>/dev/null)\" \"$(git branch --show-current 2>/dev/null)\""
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "swift-lsp@claude-plugins-official": false,
+    "document-skills@anthropic-agent-skills": false,
+    "example-skills@anthropic-agent-skills": true,
+    "tools@ikeisuke-skills": true
+  },
+  "extraKnownMarketplaces": {
+    "ikeisuke-skills": {
+      "source": {
+        "source": "github",
+        "repo": "ikeisuke/claude-skills"
+      },
+      "autoUpdate": true
+    }
+  }
+}

@@ -100,6 +100,7 @@ ghq list                     # 管理下のリポジトリ一覧
 |--------|------|
 | **claude-code** | Anthropic Claude — コーディングエージェント |
 | **codex** | OpenAI Codex — コーディングエージェント |
+| **opencode** | OpenCode — マルチプロバイダー対応コーディングエージェント |
 | **kiro-cli** | Amazon Kiro — コーディングエージェント |
 | **gemini-cli** | Google Gemini — コーディングエージェント |
 

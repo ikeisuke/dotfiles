@@ -1,5 +1,15 @@
 # Change History
 
+## 2026-03-15 Claude Code settings.json を dotfiles 管理に追加
+
+### apps/claude/settings.json (新規)
+- `~/.claude/settings.json` を dotfiles で管理開始
+- env, hooks, plugins, marketplaces 等の設定を含む
+- センシティブ情報（API キー等）は含まれていないことを確認済み
+
+### setup.sh
+- Claude Code セクションに `settings.json` のシンボリックリンクを追加
+
 ## 2026-03-14 モダン化: mise 移行・起動高速化・Git 強化・fzf config・ドキュメント分割
 
 ### zsh/tools/mise.zsh (新規)

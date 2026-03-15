@@ -48,6 +48,7 @@ brew "pulumi"   # Infrastructure as Code tool
 # (see zsh/tools/zsh-plugins.zsh) for cross-platform portability
 
 # AI tools (cross-platform)
+brew "opencode"       # OpenCode AI coding agent
 cask "codex"          # OpenAI Codex CLI
 
 # Linux-specific tools (WSL)

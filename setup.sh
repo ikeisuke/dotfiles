@@ -261,6 +261,7 @@ fi
 # Claude Code
 if [ -d "$DIR/apps/claude" ]; then
   mkdir -p ~/.claude
+  link_and_backup "$DIR/apps/claude/settings.json" ~/.claude/settings.json
   link_and_backup "$DIR/apps/claude/keybindings.json" ~/.claude/keybindings.json
 fi
 
