@@ -18,6 +18,7 @@ _ensure_zsh_plugin() {
 _ensure_zsh_plugin "zsh-autosuggestions" "zsh-users/zsh-autosuggestions"
 if [[ -f "$_plugins_dir/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; then
   source "$_plugins_dir/zsh-autosuggestions/zsh-autosuggestions.zsh"
+  bindkey '^[' autosuggest-clear   # Escape: サジェストを消す
 fi
 
 # zsh-fast-syntax-highlighting - Command syntax highlighting

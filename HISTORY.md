@@ -1,5 +1,21 @@
 # Change History
 
+## 2026-03-19 zeno補完の部分入力対応・細かな改善
+
+### zsh/tools/zeno.zsh
+- ZLEラッパーウィジェット `_zeno-completion-with-query` を追加
+- `git switch ma<tab>` のように部分入力がある状態でfzf補完を使った際、入力済みテキストがfzfの初期クエリに渡され、選択結果が正しく挿入されるよう修正
+- 対象: git switch/checkout/rebase/restore/add/diff, git branch -d/-D
+
+### apps/zeno/config.yml
+- git補完パターンに `(?!-)` 負先読みを追加し、オプション（`-c` 等）入力時にfzf補完が誤発動しないよう修正
+
+### zsh/tools/zsh-plugins.zsh
+- Escape キーで zsh-autosuggestions のサジェストをクリアするキーバインド追加
+
+### apps/git/gitignore
+- `.claude/settings.local.json` を gitignore に追加
+
 ## 2026-03-15 CLAUDE.md を dotfiles 管理に追加
 
 ### apps/claude/CLAUDE.md (新規)

@@ -7,3 +7,5 @@
 .amazonq/.subagents
 *.zwc
 .env
+
+**/.claude/settings.local.json

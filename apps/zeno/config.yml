@@ -30,7 +30,7 @@ completions:
   # ── Git ─────────────────────────────────────────────
   - name: "git add: changed files"
     patterns:
-      - "^git add\\s"
+      - "^git add\\s(?!-)"
     sourceCommand: "git diff --name-only && git ls-files --others --exclude-standard"
     options:
       "--prompt": "'add> '"
@@ -38,14 +38,14 @@ completions:
 
   - name: "git switch: local branches"
     patterns:
-      - "^git switch\\s"
+      - "^git switch\\s(?!-)"
     sourceCommand: "git branch --format='%(refname:short)' | sort"
     options:
       "--prompt": "'branch> '"
 
   - name: "git checkout: all branches"
     patterns:
-      - "^git checkout\\s"
+      - "^git checkout\\s(?!-)"
     sourceCommand: "git branch -a --format='%(refname:short)' | sort"
     options:
       "--prompt": "'branch> '"
@@ -60,14 +60,14 @@ completions:
 
   - name: "git rebase: onto branch"
     patterns:
-      - "^git rebase\\s"
+      - "^git rebase\\s(?!-)"
     sourceCommand: "git branch --format='%(refname:short)' | sort"
     options:
       "--prompt": "'rebase onto> '"
 
   - name: "git restore: unstage/discard"
     patterns:
-      - "^git restore\\s"
+      - "^git restore\\s(?!-)"
     sourceCommand: "git diff --name-only && git diff --staged --name-only"
     options:
       "--prompt": "'restore> '"
@@ -83,7 +83,7 @@ completions:
 
   - name: "git diff: changed files"
     patterns:
-      - "^git diff\\s"
+      - "^git diff\\s(?!-)"
     sourceCommand: "git diff --name-only && git diff --staged --name-only"
     options:
       "--prompt": "'diff> '"

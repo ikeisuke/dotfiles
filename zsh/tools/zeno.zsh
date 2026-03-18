@@ -27,10 +27,38 @@ command -v eza >/dev/null 2>&1 && export ZENO_GIT_TREE="eza --tree --color=alway
 source "$_zeno_home/zeno.zsh"
 unset _zeno_home
 
+# Wrapper: strip partial input from LBUFFER and pass it as fzf --query
+# so that "git switch ma<tab>" pre-fills fzf with "ma" and inserts cleanly.
+_zeno-completion-with-query() {
+  local saved_lbuffer="$LBUFFER"
+  local saved_fzf_opts="${FZF_DEFAULT_OPTS-}"
+
+  # Match known command prefixes followed by partial input (non-space chars)
+  if [[ "$LBUFFER" =~ '^(git (switch|checkout|rebase|restore|add|diff) |git branch -[dD] )[^ ]' ]]; then
+    local prefix="${match[1]}"
+    local partial="${LBUFFER#$prefix}"
+    LBUFFER="$prefix"
+    export FZF_DEFAULT_OPTS="${saved_fzf_opts} --query='${partial}'"
+  fi
+
+  zle zeno-completion
+
+  # Restore FZF_DEFAULT_OPTS
+  if [[ "${FZF_DEFAULT_OPTS-}" != "$saved_fzf_opts" ]]; then
+    FZF_DEFAULT_OPTS="$saved_fzf_opts"
+  fi
+
+  # If user cancelled fzf (LBUFFER unchanged from stripped version), restore original
+  if [[ "$LBUFFER" == "${match[1]-}" ]]; then
+    LBUFFER="$saved_lbuffer"
+  fi
+}
+zle -N _zeno-completion-with-query
+
 # Keybindings
 bindkey ' '       zeno-auto-snippet             # Space: expand snippet
 bindkey '^m'      zeno-auto-snippet-and-accept-line  # Enter: expand & execute
-bindkey '^i'      zeno-completion                # Tab: fuzzy completion
+bindkey '^i'      _zeno-completion-with-query    # Tab: fuzzy completion (with partial input support)
 bindkey '^s'      zeno-insert-snippet            # Ctrl+s: insert snippet
 bindkey '^r'      zeno-history-selection          # Ctrl+r: fuzzy history (replaces fzf)
 bindkey '^g'      zeno-ghq-cd                    # Ctrl+g: ghq cd
