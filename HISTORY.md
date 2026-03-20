@@ -2,6 +2,10 @@
 
 ## 2026-03-20 Claude Code ステータスライン対応
 
+### apps/claude/statusline.py
+- 値が未取得の場合に項目が消えるのではなくデフォルト値(0)を表示するよう変更
+- cost→$0.00、duration→0m00s、lines→+0 -0、ctx→0%、5h/7d→0% をデフォルトに
+
 ### apps/claude/statusline.py (新規)
 - Braille dots パターンでAPIレート制限をステータスバーに表示するスクリプトを追加
 - コンテキスト使用率(ctx)、5時間枠(5h)、7日枠(7d)をTrueColorグラデーション付きで表示
