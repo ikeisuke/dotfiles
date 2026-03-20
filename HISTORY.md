@@ -5,10 +5,12 @@
 ### apps/claude/statusline.py (新規)
 - Braille dots パターンでAPIレート制限をステータスバーに表示するスクリプトを追加
 - コンテキスト使用率(ctx)、5時間枠(5h)、7日枠(7d)をTrueColorグラデーション付きで表示
+- レート制限のリセットまでの残り時間を表示（`resets_at` フィールドから算出、`Xh XXm` 形式）
 - 参考: https://nyosegawa.com/posts/claude-code-statusline-rate-limits/
 
 ### apps/claude/settings.json
 - `statusLine` 設定を追加（`~/.claude/statusline.py` をコマンドとして実行）
+- `permissions.defaultMode` を `"auto"` に変更（auto mode をデフォルト有効化）
 
 ### setup.sh
 - `statusline.py` のシンボリックリンク作成と実行権限付与を追加

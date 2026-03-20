@@ -2,6 +2,7 @@
 """Braille dots statusline - dotted progress bar using braille characters."""
 import json
 import sys
+import time
 
 try:
     data = json.load(sys.stdin)
@@ -39,9 +40,23 @@ def braille_bar(pct, width=8):
     return bar
 
 
-def fmt(label, pct):
+def fmt_reset(epoch):
+    if epoch is None:
+        return ""
+    remaining = epoch - time.time()
+    if remaining <= 0:
+        return ""
+    h = int(remaining // 3600)
+    m = int((remaining % 3600) // 60)
+    if h > 0:
+        return f" {DIM}{h}h{m:02d}m{R}"
+    return f" {DIM}{m}m{R}"
+
+
+def fmt(label, pct, resets_at=None):
     p = round(pct)
-    return f"{DIM}{label}{R} {gradient(pct)}{braille_bar(pct)}{R} {p}%"
+    reset = fmt_reset(resets_at)
+    return f"{DIM}{label}{R} {gradient(pct)}{braille_bar(pct)}{R} {p}%{reset}"
 
 
 model = data.get("model", {}).get("display_name", "Claude")
@@ -51,12 +66,14 @@ ctx = data.get("context_window", {}).get("used_percentage")
 if ctx is not None:
     parts.append(fmt("ctx", ctx))
 
-five = data.get("rate_limits", {}).get("five_hour", {}).get("used_percentage")
+five_hr = data.get("rate_limits", {}).get("five_hour", {})
+five = five_hr.get("used_percentage")
 if five is not None:
-    parts.append(fmt("5h", five))
+    parts.append(fmt("5h", five, five_hr.get("resets_at")))
 
-week = data.get("rate_limits", {}).get("seven_day", {}).get("used_percentage")
+seven_day = data.get("rate_limits", {}).get("seven_day", {})
+week = seven_day.get("used_percentage")
 if week is not None:
-    parts.append(fmt("7d", week))
+    parts.append(fmt("7d", week, seven_day.get("resets_at")))
 
 print(f" {DIM}│{R} ".join(parts), end="")

@@ -109,7 +109,7 @@
       "Bash(git branch*-D *)",
       "Bash(git branch*--force *)"
     ],
-    "defaultMode": "default"
+    "defaultMode": "auto"
   },
   "enabledMcpjsonServers": [],
   "hooks": {
