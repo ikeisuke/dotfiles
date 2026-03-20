@@ -264,6 +264,8 @@ if [ -d "$DIR/apps/claude" ]; then
   link_and_backup "$DIR/apps/claude/CLAUDE.md" ~/.claude/CLAUDE.md
   link_and_backup "$DIR/apps/claude/settings.json" ~/.claude/settings.json
   link_and_backup "$DIR/apps/claude/keybindings.json" ~/.claude/keybindings.json
+  link_and_backup "$DIR/apps/claude/statusline.py" ~/.claude/statusline.py
+  chmod +x ~/.claude/statusline.py
 
   # Install/update plugins
   if command -v claude >/dev/null 2>&1; then

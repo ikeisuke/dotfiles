@@ -1,5 +1,18 @@
 # Change History
 
+## 2026-03-20 Claude Code ステータスライン対応
+
+### apps/claude/statusline.py (新規)
+- Braille dots パターンでAPIレート制限をステータスバーに表示するスクリプトを追加
+- コンテキスト使用率(ctx)、5時間枠(5h)、7日枠(7d)をTrueColorグラデーション付きで表示
+- 参考: https://nyosegawa.com/posts/claude-code-statusline-rate-limits/
+
+### apps/claude/settings.json
+- `statusLine` 設定を追加（`~/.claude/statusline.py` をコマンドとして実行）
+
+### setup.sh
+- `statusline.py` のシンボリックリンク作成と実行権限付与を追加
+
 ## 2026-03-19 zeno補完の部分入力対応・細かな改善
 
 ### zsh/tools/zeno.zsh
