@@ -3,6 +3,9 @@
   "env": {
     "CLAUDE_CODE_MONITOR_GHOSTTY_ASKED": "1",
     "CLAUDE_CODE_DISABLE_TERMINAL_TITLE": "1",
+    "CLAUDE_CODE_DISABLE_FAST_MODE": "1",
+    "CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY": "1",
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "20"
   },
   "attribution": {
@@ -11,20 +14,8 @@
   },
   "permissions": {
     "allow": [
-      "Grep",
-      "Glob",
-      "ToolSearch",
       "WebSearch",
       "WebFetch",
-      "TaskCreate",
-      "TaskUpdate",
-      "TaskOutput",
-      "TaskList",
-      "TaskGet",
-      "TaskStop",
-      "AskUserQuestion",
-      "Agent",
-      "EnterPlanMode",
       "ExitPlanMode",
       "Skill",
       "Read(/**)",
@@ -91,7 +82,6 @@
       "Bash(tee -a docs/cycles/*/history/*)",
       "Bash(wc *)",
       "Bash(which *)",
-      "TodoWrite",
       "Bash(git fetch *)",
       "Bash(git mv *)",
       "Bash(gh label *)",
