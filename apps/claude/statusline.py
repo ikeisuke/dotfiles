@@ -3,7 +3,10 @@
 import json
 import sys
 
-data = json.load(sys.stdin)
+try:
+    data = json.load(sys.stdin)
+except (json.JSONDecodeError, ValueError):
+    sys.exit(0)
 
 BRAILLE = " ⣀⣄⣤⣦⣶⣷⣿"
 R = "\033[0m"
@@ -32,7 +35,7 @@ def braille_bar(pct, width=8):
             bar += BRAILLE[0]
         else:
             frac = (level - seg_start) / (seg_end - seg_start)
-            bar += BRAILLE[min(int(frac * 7), 7)]
+            bar += BRAILLE[min(int(frac * 8), 7)]
     return bar
 
 
