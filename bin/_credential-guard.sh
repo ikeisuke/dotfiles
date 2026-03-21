@@ -263,15 +263,18 @@ _setup_sandbox() {
         echo '(version 1)'
         echo '(allow default)'
         echo ''
+        # AGENT_SANDBOX_DEBUG=1 で deny 時にシステムログに記録
+        local _report=""
+        [[ "${AGENT_SANDBOX_DEBUG:-}" == "1" ]] && _report=" (with report)"
         echo ';; 機密ディレクトリの読み取りを拒否'
-        echo '(deny file-read*'
+        echo "(deny file-read*${_report}"
         for _p in "${_SANDBOX_DENY_READ_PATHS[@]}"; do
           echo "  (subpath \"$_p\")"
         done
         echo ')'
         echo ''
         echo ';; 書き込みをホワイトリストに制限'
-        echo '(deny file-write*'
+        echo "(deny file-write*${_report}"
         echo '  (require-not'
         echo '    (require-any'
         echo "      (subpath \"$_cwd\")"

@@ -186,6 +186,20 @@ SSO セッションが切れている。再ログインする:
 aws sso login --profile <プロファイル名>
 ```
 
+### サンドボックスのデバッグ
+
+`AGENT_SANDBOX_DEBUG=1` で起動すると、Seatbelt がブロックした操作がシステムログに記録される:
+
+```bash
+# ターミナル1: デバッグモードで起動
+AGENT_SANDBOX_DEBUG=1 claude
+
+# ターミナル2: ログをリアルタイム監視
+log stream --predicate 'process == "sandboxd"' --style compact
+```
+
+ブロックされたファイルパスと操作（file-read / file-write）が表示される。
+
 ### エージェントが起動しない・動作がおかしい
 
 サンドボックスの書き込み制限が原因の可能性がある。以下の手順で切り分ける:
