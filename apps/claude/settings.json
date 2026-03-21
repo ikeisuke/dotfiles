@@ -123,15 +123,7 @@
     "defaultMode": "auto"
   },
   "sandbox": {
-    "enabled": true,
-    "filesystem": {
-      "denyRead": [
-        "~/.aws",
-        "~/.ssh",
-        "~/.config/gh",
-        "~/.gnupg"
-      ]
-    }
+    "enabled": false
   },
   "enabledMcpjsonServers": [],
   "hooks": {

@@ -22,4 +22,4 @@ if [[ -z "$REAL_BIN" ]]; then
   exit 1
 fi
 
-credential_guard_exec "$REAL_BIN" "$@"
+credential_guard_sandbox_exec "$REAL_BIN" "$@"

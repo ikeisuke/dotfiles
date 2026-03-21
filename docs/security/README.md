@@ -107,10 +107,10 @@ GitHub トークンは `secret-tool`（GNOME Keyring）で管理:
 sudo apt install libsecret-tools    # Ubuntu/Debian
 
 # トークンを保存
-secret-tool store --label="GitHub PAT for AI agents" service claude-gh-token account "$USER"
+secret-tool store --label="GitHub PAT for AI agents" service ai-agent-gh-token account "$USER"
 
 # 確認
-secret-tool lookup service claude-gh-token account "$USER"
+secret-tool lookup service ai-agent-gh-token account "$USER"
 ```
 
 `secret-tool` 未インストールの場合は既存の `GH_TOKEN` / `GITHUB_TOKEN` 環境変数がそのまま継承される。
@@ -180,6 +180,32 @@ SSO セッションが切れている。再ログインする:
 ```bash
 aws sso login --profile <プロファイル名>
 ```
+
+### エージェントが起動しない・動作がおかしい
+
+サンドボックスの書き込み制限が原因の可能性がある。以下の手順で切り分ける:
+
+```bash
+# 1. AGENT_UNSAFE で起動できるか確認（sandbox スキップ）
+AGENT_UNSAFE=1 claude
+
+# 2. 起動できたら sandbox が原因。書き込み先を特定する:
+#    別ターミナルで以下を実行
+touch /tmp/before-agent
+
+# 3. 通常起動（sandbox あり）して操作後に終了
+
+# 4. 変更されたファイルを確認
+find ~ -maxdepth 4 -newer /tmp/before-agent \
+  -not -path '*/node_modules/*' \
+  -not -path '*/.git/*' \
+  -not -path '*/Library/Logs/*' \
+  -not -path '*/.claude/projects/*' \
+  2>/dev/null | sort
+```
+
+特定できたパスを `_credential-guard.sh` の `_SANDBOX_ALLOW_WRITE_PATHS` または
+`_SANDBOX_ALLOW_WRITE_FILES` に追加する。
 
 ### ラッパーをバイパスしたい
 

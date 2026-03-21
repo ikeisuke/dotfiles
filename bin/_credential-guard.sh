@@ -22,7 +22,7 @@ fi
 # ─── デフォルト値 ───────────────────────────────────────
 ALLOWED_AWS_PROFILES=""
 DEFAULT_AWS_PROFILE=""
-GH_KEYCHAIN_SERVICE="claude-gh-token"
+GH_KEYCHAIN_SERVICE="ai-agent-gh-token"
 _DEFAULT_REGION="ap-northeast-1"
 
 # バイナリパス（マシンごとに異なる可能性がある）
@@ -87,7 +87,7 @@ ALLOWED_AWS_PROFILES="readonly"
 DEFAULT_AWS_PROFILE="readonly"
 
 # Keychain に保存した GitHub PAT のサービス名
-GH_KEYCHAIN_SERVICE="claude-gh-token"
+GH_KEYCHAIN_SERVICE="ai-agent-gh-token"
 
 # 各ツールの実体パス（自動検出済み、必要に応じて修正）
 CLAUDE_BIN="$(_detect_bin claude)"
@@ -209,28 +209,32 @@ fi
 # macOS: Seatbelt (sandbox-exec)、Linux/WSL2: bubblewrap (bwrap)
 #
 # 読み取り拒否: 機密ディレクトリ
-# 書き込み許可: カレントディレクトリ + /tmp + ツール固有ディレクトリのみ
+# 書き込み許可: カレントディレクトリ + /tmp + ツール・シェルが使うディレクトリ（ホワイトリスト方式）
 
 _SANDBOX_DENY_READ_PATHS=(
   "$HOME/.aws"
   "$HOME/.ssh"
   "$HOME/.config/gh"
   "$HOME/.gnupg"
+  "$HOME/.config/security-wrapper"
 )
 
-# ツール固有のデータディレクトリ（書き込み許可が必要）
-# 注: ~/.config は広すぎるため個別に指定（security-wrapper/config の書き換え防止）
 _SANDBOX_ALLOW_WRITE_PATHS=(
   "$HOME/.claude"
   "$HOME/.codex"
   "$HOME/.kiro"
   "$HOME/.gemini"
   "$HOME/.local/share"
+  "$HOME/.local/state"
   "$HOME/.cache"
   "$HOME/.npm"
   "$HOME/.config/claude"
   "$HOME/.config/codex"
   "$HOME/.config/kiro"
+)
+
+_SANDBOX_ALLOW_WRITE_FILES=(
+  "$HOME/.claude.json"
 )
 
 _sandbox_cmd=()
@@ -252,17 +256,24 @@ _setup_sandbox() {
         done
         echo ')'
         echo ''
-        echo ';; 書き込みをカレントディレクトリ、/tmp、ツール固有ディレクトリに制限'
+        echo ';; 書き込みをホワイトリストに制限'
         echo '(deny file-write*'
         echo '  (require-not'
         echo '    (require-any'
         echo "      (subpath \"$_cwd\")"
         echo '      (subpath "/tmp")'
         echo '      (subpath "/private/tmp")'
-        echo '      (subpath "/private/var/folders")'  # macOS の $TMPDIR
+        echo '      (subpath "/private/var/folders")'
+        echo '      (literal "/dev/null")'
+        echo '      (literal "/dev/zero")'
+        echo '      (literal "/dev/random")'
+        echo '      (literal "/dev/urandom")'
         echo "      (subpath \"$_tmpdir\")"
         for _p in "${_SANDBOX_ALLOW_WRITE_PATHS[@]}"; do
           echo "      (subpath \"$_p\")"
+        done
+        for _f in "${_SANDBOX_ALLOW_WRITE_FILES[@]}"; do
+          echo "      (literal \"$_f\")"
         done
         echo ')))'
       } > "$_sb"
@@ -283,7 +294,7 @@ _setup_sandbox() {
         --dev /dev
         --proc /proc
       )
-      # ツール固有ディレクトリを書き込み可能に（未作成なら作成）
+      # ホワイトリストのディレクトリを書き込み可能に（未作成なら作成）
       for _p in "${_SANDBOX_ALLOW_WRITE_PATHS[@]}"; do
         [[ -d "$_p" ]] || mkdir -p "$_p"
         _sandbox_cmd+=(--bind "$_p" "$_p")
@@ -299,6 +310,8 @@ _setup_sandbox() {
 # ─── exec ヘルパー ──────────────────────────────────────
 # 共通の env 引数を構築（継承された危険な環境変数を明示的にクリア）
 _build_env_args() {
+  # env コマンドは -u オプションを VAR=val より前に置く必要がある
+  # まず -u を全て集め、その後に VAR=val を追加する
   _env_args=(
     env
     # 継承された AWS クレデンシャルをクリア（config/credentials file より優先されるため）
@@ -309,24 +322,27 @@ _build_env_args() {
     -u AWS_DEFAULT_PROFILE
     -u AWS_ROLE_ARN
     -u AWS_ROLE_SESSION_NAME
-    # 制限済みクレデンシャルを注入
-    AWS_CONFIG_FILE="$_aws_config"
-    AWS_SHARED_CREDENTIALS_FILE="$_aws_creds"
-    GH_CONFIG_DIR="$_tmpdir/gh"
-    SSH_AUTH_SOCK=
   )
   # GitHub トークン: セキュアストアから取得できた場合は既存を上書き
   # 環境変数フォールバックの場合はそのまま継承（クリアしない）
   if [[ "$_gh_token_source" == "Keychain" || "$_gh_token_source" == "GNOME Keyring" ]]; then
     _env_args+=(-u GH_TOKEN -u GITHUB_TOKEN)
-    _env_args+=(GH_TOKEN="$_gh_token")
-  elif [[ -n "$_gh_token" ]]; then
-    # 環境変数から継承: GH_TOKEN に統一（GITHUB_TOKEN はクリア）
-    _env_args+=(-u GITHUB_TOKEN)
-    _env_args+=(GH_TOKEN="$_gh_token")
-  else
+  elif [[ -z "$_gh_token" ]]; then
     # トークンなし: 既存もクリア（未認証で動作）
     _env_args+=(-u GH_TOKEN -u GITHUB_TOKEN)
+  else
+    # 環境変数から継承: GITHUB_TOKEN はクリア（GH_TOKEN に統一）
+    _env_args+=(-u GITHUB_TOKEN)
+  fi
+  # 制限済みクレデンシャルを注入（-u の後に VAR=val）
+  _env_args+=(
+    AWS_CONFIG_FILE="$_aws_config"
+    AWS_SHARED_CREDENTIALS_FILE="$_aws_creds"
+    GH_CONFIG_DIR="$_tmpdir/gh"
+    SSH_AUTH_SOCK=
+  )
+  if [[ -n "$_gh_token" ]]; then
+    _env_args+=(GH_TOKEN="$_gh_token")
   fi
 }
 
