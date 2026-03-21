@@ -256,6 +256,20 @@ _sandbox_cmd=()
 _setup_sandbox() {
   local _cwd="$PWD"
 
+  # git worktree の場合、メインリポジトリの .git ディレクトリも書き込み許可が必要
+  local _git_common_dir=""
+  if command -v git >/dev/null 2>&1; then
+    _git_common_dir=$(git rev-parse --git-common-dir 2>/dev/null) || true
+    # 相対パスの場合は絶対パスに変換
+    if [[ -n "$_git_common_dir" && "$_git_common_dir" != /* ]]; then
+      _git_common_dir="$_cwd/$_git_common_dir"
+    fi
+    # 通常リポジトリ（$_cwd 配下）なら追加不要
+    if [[ -n "$_git_common_dir" && "$_git_common_dir" == "$_cwd"/* ]]; then
+      _git_common_dir=""
+    fi
+  fi
+
   case "$(uname)" in
     Darwin)
       local _sb="$_tmpdir/sandbox.sb"
@@ -277,6 +291,8 @@ _setup_sandbox() {
           echo '  (require-not'
           echo '    (require-any'
           echo "      (subpath \"$_cwd\")"
+          # git worktree: メインリポジトリの .git ディレクトリ
+          [[ -n "$_git_common_dir" ]] && echo "      (subpath \"$_git_common_dir\")"
           echo '      (subpath "/tmp")'
           echo '      (subpath "/private/tmp")'
           echo '      (subpath "/private/var/folders")'
@@ -308,6 +324,7 @@ _setup_sandbox() {
         bwrap
         --ro-bind / /
         --bind "$_cwd" "$_cwd"
+        ${_git_common_dir:+--bind "$_git_common_dir" "$_git_common_dir"}
         --bind /tmp /tmp
         --bind "$_tmpdir" "$_tmpdir"
         --dev /dev
