@@ -188,17 +188,25 @@ aws sso login --profile <プロファイル名>
 
 ### サンドボックスのデバッグ
 
-`AGENT_SANDBOX_DEBUG=1` で起動すると、書き込み制限が deny ではなく trace になり、ブロックせずにログ出力する:
+`AGENT_SANDBOX_DEBUG=1` で起動すると、書き込み制限を無効化する（読み取り拒否は有効のまま）。
+`find -newer` と組み合わせてホワイトリスト外への書き込み先を特定する:
 
 ```bash
-# ターミナル1: デバッグモードで起動
+# ターミナル1: マーカーを作成
+touch /tmp/before-agent
+
+# ターミナル2: デバッグモードで起動して操作を再現
 AGENT_SANDBOX_DEBUG=1 claude
 
-# ターミナル2: ログをリアルタイム監視
-log stream --predicate 'process == "sandboxd"' --style compact
+# ターミナル1: 操作後に書き込み先を確認
+find ~ -maxdepth 4 -newer /tmp/before-agent \
+  -not -path '*/node_modules/*' \
+  -not -path '*/.git/*' \
+  -not -path '*/Library/Logs/*' \
+  -not -path '*/.claude/projects/*' \
+  2>/dev/null | sort
 ```
 
-ホワイトリスト外への書き込みがログに表示される（読み取り拒否は常に有効）。
 追加すべきパスを特定したら `_SANDBOX_ALLOW_WRITE_PATHS` / `_SANDBOX_ALLOW_WRITE_FILES` に追加する。
 
 ### エージェントが起動しない・動作がおかしい

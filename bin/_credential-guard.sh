@@ -270,32 +270,31 @@ _setup_sandbox() {
         done
         echo ')'
         echo ''
-        # AGENT_SANDBOX_DEBUG=1: 書き込み拒否をトレース（deny ではなく許可しつつログ出力）
-        if [[ "${AGENT_SANDBOX_DEBUG:-}" == "1" ]]; then
-          echo ';; デバッグ: 書き込みをトレース（拒否せずログのみ）'
-          echo '(trace file-write*'
-        else
+        # AGENT_SANDBOX_DEBUG=1: 書き込み制限を無効化（find -newer で書き込み先を特定）
+        if [[ "${AGENT_SANDBOX_DEBUG:-}" != "1" ]]; then
           echo ';; 書き込みをホワイトリストに制限'
           echo '(deny file-write*'
+          echo '  (require-not'
+          echo '    (require-any'
+          echo "      (subpath \"$_cwd\")"
+          echo '      (subpath "/tmp")'
+          echo '      (subpath "/private/tmp")'
+          echo '      (subpath "/private/var/folders")'
+          echo '      (literal "/dev/null")'
+          echo '      (literal "/dev/zero")'
+          echo '      (literal "/dev/random")'
+          echo '      (literal "/dev/urandom")'
+          echo "      (subpath \"$_tmpdir\")"
+          for _p in "${_SANDBOX_ALLOW_WRITE_PATHS[@]}"; do
+            echo "      (subpath \"$_p\")"
+          done
+          for _f in "${_SANDBOX_ALLOW_WRITE_FILES[@]}"; do
+            echo "      (literal \"$_f\")"
+          done
+          echo ')))'
+        else
+          echo ';; デバッグ: 書き込み制限を無効化（読み取り拒否のみ有効）'
         fi
-        echo '  (require-not'
-        echo '    (require-any'
-        echo "      (subpath \"$_cwd\")"
-        echo '      (subpath "/tmp")'
-        echo '      (subpath "/private/tmp")'
-        echo '      (subpath "/private/var/folders")'
-        echo '      (literal "/dev/null")'
-        echo '      (literal "/dev/zero")'
-        echo '      (literal "/dev/random")'
-        echo '      (literal "/dev/urandom")'
-        echo "      (subpath \"$_tmpdir\")"
-        for _p in "${_SANDBOX_ALLOW_WRITE_PATHS[@]}"; do
-          echo "      (subpath \"$_p\")"
-        done
-        for _f in "${_SANDBOX_ALLOW_WRITE_FILES[@]}"; do
-          echo "      (literal \"$_f\")"
-        done
-        echo ')))'
       } > "$_sb"
       _sandbox_cmd=(sandbox-exec -f "$_sb")
       ;;
