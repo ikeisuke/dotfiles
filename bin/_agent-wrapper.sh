@@ -27,7 +27,14 @@ if [[ "${AGENT_UNSAFE:-}" == "1" || "${_CREDENTIAL_GUARD_SANDBOXED:-}" == "1" ]]
     echo "[$WRAPPER_NAME] ERROR: 実体が見つかりません" >&2
     exit 1
   fi
-  exec "$REAL_BIN" "$@"
+  # sandbox 済みの場合、ツールの内蔵 sandbox を無効化（二重 sandbox 防止）
+  _extra_args=()
+  if [[ "${_CREDENTIAL_GUARD_SANDBOXED:-}" == "1" ]]; then
+    case "$WRAPPER_NAME" in
+      codex) _extra_args=(--sandbox off) ;;
+    esac
+  fi
+  exec "$REAL_BIN" "${_extra_args[@]}" "$@"
 fi
 
 # BIN 変数名を導出: kiro-cli → KIRO_CLI_BIN
