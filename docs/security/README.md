@@ -188,7 +188,7 @@ aws sso login --profile <プロファイル名>
 
 ### サンドボックスのデバッグ
 
-`AGENT_SANDBOX_DEBUG=1` で起動すると、Seatbelt がブロックした操作がシステムログに記録される:
+`AGENT_SANDBOX_DEBUG=1` で起動すると、書き込み制限が deny ではなく trace になり、ブロックせずにログ出力する:
 
 ```bash
 # ターミナル1: デバッグモードで起動
@@ -198,7 +198,8 @@ AGENT_SANDBOX_DEBUG=1 claude
 log stream --predicate 'process == "sandboxd"' --style compact
 ```
 
-ブロックされたファイルパスと操作（file-read / file-write）が表示される。
+ホワイトリスト外への書き込みがログに表示される（読み取り拒否は常に有効）。
+追加すべきパスを特定したら `_SANDBOX_ALLOW_WRITE_PATHS` / `_SANDBOX_ALLOW_WRITE_FILES` に追加する。
 
 ### エージェントが起動しない・動作がおかしい
 
