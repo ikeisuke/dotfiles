@@ -230,7 +230,6 @@ _SANDBOX_DENY_READ_PATHS=(
   "$HOME/.ssh"
   "$HOME/.config/gh"
   "$HOME/.gnupg"
-  "$HOME/.config/security-wrapper"
 )
 
 _SANDBOX_ALLOW_WRITE_PATHS=(
