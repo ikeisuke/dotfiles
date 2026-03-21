@@ -105,6 +105,19 @@ fi
 # 環境変数でのオーバーライド（AGENT_AWS_PROFILE > AWS_PROFILE > config の DEFAULT_AWS_PROFILE）
 DEFAULT_AWS_PROFILE="${AGENT_AWS_PROFILE:-${AWS_PROFILE:-$DEFAULT_AWS_PROFILE}}"
 
+# ロードするプロファイル（AGENT_AWS_PROFILES > デフォルトのみ）
+# AGENT_AWS_PROFILES が指定されていればそれを、未指定なら DEFAULT_AWS_PROFILE のみロード
+# 許可リスト外のプロファイルは拒否する
+_LOAD_PROFILES="${AGENT_AWS_PROFILES:-$DEFAULT_AWS_PROFILE}"
+if [[ -n "$_LOAD_PROFILES" && -n "$ALLOWED_AWS_PROFILES" ]]; then
+  for _p in ${=_LOAD_PROFILES}; do
+    if [[ " ${ALLOWED_AWS_PROFILES} " != *" $_p "* ]]; then
+      echo "[$_WRAPPER_NAME] ERROR: AWS '$_p' は許可リストにありません (ALLOWED_AWS_PROFILES)" >&2
+      exit 1
+    fi
+  done
+fi
+
 # ─── 一時ディレクトリ ───────────────────────────────────
 _tmpdir=$(mktemp -d)
 trap '\rm -rf "$_tmpdir"' EXIT
@@ -131,8 +144,8 @@ _write_aws_profile() {
 
 _default_written=false
 
-if command -v aws >/dev/null 2>&1 && [[ -n "$ALLOWED_AWS_PROFILES" ]]; then
-  for _profile in ${=ALLOWED_AWS_PROFILES}; do
+if command -v aws >/dev/null 2>&1 && [[ -n "$_LOAD_PROFILES" ]]; then
+  for _profile in ${=_LOAD_PROFILES}; do
     # 一時クレデンシャルを取得（jq がなければ grep/cut にフォールバック）
     if _exported=$(aws configure export-credentials --profile "$_profile" --format process 2>/dev/null); then
       if command -v jq >/dev/null 2>&1; then
