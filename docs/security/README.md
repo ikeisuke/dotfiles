@@ -1,0 +1,192 @@
+# AI エージェント セキュリティラッパー
+
+AI コーディングエージェント（Claude Code, Codex, Kiro CLI, Gemini CLI）が
+ローカルのクレデンシャルを悪用することを防ぐ多層防御の仕組み。
+
+## 問題
+
+エージェントはユーザーの端末で動くため、`~/.aws`, `~/.ssh`, `~/.config/gh` 等の
+クレデンシャルにフルアクセスできる。管理者権限のトークンが漏洩・悪用されるリスクがある。
+
+## アーキテクチャ
+
+```
+保護層                          仕組み                     回避可能性
+────────────────────────────────────────────────────────────────────
+Layer 1: OS サンドボックス       Seatbelt / bubblewrap      不可（カーネル強制）
+Layer 2: クレデンシャル分離      環境変数で一時認証を注入    不可（起動前に確定）
+Layer 3: サービス側制限          IAM Role / Fine-grained PAT 不可（サーバ側で拒否）
+Layer 4: ツール固有の設定        permissions.deny 等         低〜中（AI の判断に依存）
+```
+
+## ファイル構成
+
+```
+bin/
+├── _credential-guard.sh      # 共通ライブラリ（クレデンシャル分離 + サンドボックス）
+├── claude                    # Claude Code ラッパー
+├── codex                     # Codex ラッパー
+├── kiro-cli                  # Kiro CLI ラッパー
+├── kiro-cli-chat             # Kiro CLI Chat ラッパー
+└── gemini                    # Gemini CLI ラッパー
+
+~/.config/security-wrapper/
+└── config                    # マシン固有の設定（git 管理外、初回自動生成）
+
+apps/claude/settings.json     # Claude Code: sandbox.filesystem.denyRead 等
+```
+
+## 各ツールの保護レベル
+
+| 保護 | Claude Code | Codex | Kiro CLI | Gemini CLI |
+|------|------------|-------|----------|------------|
+| クレデンシャル分離 | `credential_guard_exec` | `credential_guard_sandbox_exec` | `credential_guard_sandbox_exec` | `credential_guard_sandbox_exec` |
+| denyRead | 内蔵 sandbox (settings.json) | ラッパーが Seatbelt/bwrap 適用 | ラッパーが Seatbelt/bwrap 適用 | ラッパーが Seatbelt/bwrap 適用 |
+| 書き込み制限 | 内蔵 sandbox | 内蔵 (`--sandbox`) | なし | なし |
+| ネットワーク制限 | 内蔵 sandbox | 内蔵（デフォルト遮断） | なし | なし |
+| permissions deny | あり | なし | なし | なし |
+
+## セットアップ
+
+### 1. setup.sh を実行
+
+```bash
+./setup.sh
+```
+
+`~/bin/` にラッパースクリプトがシンボリックリンクされる。
+`~/bin` は macOS で PATH の先頭に入っているため、実体より優先して解決される。
+
+### 2. 初回起動
+
+```bash
+claude  # または codex, kiro-cli, kiro-cli-chat, gemini
+```
+
+初回は `~/.config/security-wrapper/config` が自動生成され、設定を促して終了する。
+
+### 3. 設定ファイルを編集
+
+```bash
+vi ~/.config/security-wrapper/config
+```
+
+```bash
+# 許可する AWS プロファイル（スペース区切り）
+ALLOWED_AWS_PROFILES="dev staging"
+
+# デフォルトプロファイル
+DEFAULT_AWS_PROFILE="dev"
+
+# バイナリパスは自動検出済み（通常編集不要）
+CLAUDE_BIN="/opt/homebrew/bin/claude"
+CODEX_BIN="/opt/homebrew/bin/codex"
+KIRO_CLI_BIN="/Users/you/.local/bin/kiro-cli"
+KIRO_CLI_CHAT_BIN="/Users/you/.local/bin/kiro-cli-chat"
+GEMINI_BIN="/opt/homebrew/bin/gemini"
+```
+
+### 4. GitHub Fine-grained PAT を設定
+
+[github-pat-setup.md](./github-pat-setup.md) を参照。
+
+### 5. Linux/WSL2 の場合
+
+bubblewrap をインストール:
+
+```bash
+sudo apt install bubblewrap    # Ubuntu/Debian
+sudo dnf install bubblewrap    # Fedora
+```
+
+未インストールの場合はサンドボックスなし（クレデンシャル分離のみ）で起動する。
+
+GitHub トークンは `secret-tool`（GNOME Keyring）で管理:
+
+```bash
+sudo apt install libsecret-tools    # Ubuntu/Debian
+
+# トークンを保存
+secret-tool store --label="GitHub PAT for AI agents" service claude-gh-token account "$USER"
+
+# 確認
+secret-tool lookup service claude-gh-token account "$USER"
+```
+
+`secret-tool` 未インストールの場合は既存の `GH_TOKEN` / `GITHUB_TOKEN` 環境変数がそのまま継承される。
+
+## 使い方
+
+```bash
+# 通常起動（設定済みプロファイルで保護される）
+claude
+codex
+kiro-cli
+gemini
+
+# 一時的に別の AWS プロファイルを使う（許可リスト内に限る）
+AGENT_AWS_PROFILE=staging claude
+
+# シェルの AWS_PROFILE を引き継ぐ
+AWS_PROFILE=dev claude
+
+# セキュリティラッパーをバイパス（自己責任）
+AGENT_UNSAFE=1 claude
+```
+
+### AWS プロファイルの優先順位
+
+```
+AGENT_AWS_PROFILE  →  AWS_PROFILE  →  config の DEFAULT_AWS_PROFILE
+（最優先）            （シェルの設定）   （フォールバック）
+```
+
+## サンドボックスが拒否するパス
+
+以下のディレクトリはカーネルレベルで読み取りが拒否される:
+
+| パス | 内容 |
+|------|------|
+| `~/.aws` | AWS クレデンシャル、SSO キャッシュ、設定 |
+| `~/.ssh` | SSH 秘密鍵、known_hosts |
+| `~/.config/gh` | GitHub CLI トークン |
+| `~/.gnupg` | GPG 秘密鍵 |
+
+## 動作確認
+
+エージェント内で以下を試して `Operation not permitted` が返れば成功:
+
+```
+cat ~/.aws/config
+cat ~/.ssh/id_ed25519
+```
+
+Claude Code の場合は Read ツールでも確認:
+- `File is in a directory that is denied` → permissions.deny（ツールレベル）
+- `Operation not permitted` → sandbox（カーネルレベル）
+
+## トラブルシューティング
+
+### "WARN: bwrap 未インストール" (Linux)
+
+```bash
+sudo apt install bubblewrap
+```
+
+### "AWS プロファイルのクレデンシャル取得失敗"
+
+SSO セッションが切れている。再ログインする:
+
+```bash
+aws sso login --profile <プロファイル名>
+```
+
+### ラッパーをバイパスしたい
+
+```bash
+# 方法1: 環境変数
+AGENT_UNSAFE=1 claude
+
+# 方法2: 実体を直接呼ぶ
+/opt/homebrew/bin/claude
+```

@@ -1,0 +1,25 @@
+#!/bin/zsh
+# Claude Code セキュリティラッパー
+# ~/bin/claude → PATH 優先度で実体より先に解決
+#
+# 設定: ~/.config/security-wrapper/config
+# バイパス: AGENT_UNSAFE=1 claude
+# プロファイル指定: AGENT_AWS_PROFILE=dev claude
+
+set -euo pipefail
+
+WRAPPER_NAME="claude"
+source "${0:A:h}/_credential-guard.sh"
+
+# AGENT_UNSAFE 時は _credential-guard.sh が早期 return するので config 不要
+if [[ "${AGENT_UNSAFE:-}" == "1" ]]; then
+  exec "${CLAUDE_BIN:-$(path=(${path:#$HOME/bin}) command -v claude)}" "$@"
+fi
+
+REAL_BIN="$CLAUDE_BIN"
+if [[ -z "$REAL_BIN" ]]; then
+  echo "[$WRAPPER_NAME] ERROR: CLAUDE_BIN が設定されていません ($CONFIG_FILE)" >&2
+  exit 1
+fi
+
+credential_guard_exec "$REAL_BIN" "$@"

@@ -258,6 +258,16 @@ if check_dependency tmux; then
   fi
 fi
 
+# ~/bin (security wrappers)
+if [ -d "$DIR/bin" ]; then
+  mkdir -p ~/bin
+  for script in "$DIR/bin"/*; do
+    [ -f "$script" ] || continue
+    link_and_backup "$script" "$HOME/bin/$(basename "$script")"
+    chmod +x "$HOME/bin/$(basename "$script")"
+  done
+fi
+
 # Claude Code
 if [ -d "$DIR/apps/claude" ]; then
   mkdir -p ~/.claude

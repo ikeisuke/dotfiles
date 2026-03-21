@@ -1,5 +1,43 @@
 # Change History
 
+## 2026-03-22 AI エージェント セキュリティラッパー追加
+
+### bin/_credential-guard.sh (新規)
+- AI エージェント共通のクレデンシャル分離ライブラリを追加
+- AWS: SSO 一時クレデンシャルを取得し、許可プロファイルのみの一時 config/credentials ファイルを生成
+- GitHub: OS に応じたセキュアストアからトークン取得（macOS: Keychain、Linux: secret-tool / 環境変数フォールバック）
+- Linux/WSL2 で GH_TOKEN/GITHUB_TOKEN が不当にクリアされる問題を修正（セキュアストア未使用時は既存トークンを継承）
+- SSH: SSH_AUTH_SOCK を無効化
+- 継承された危険な環境変数（AWS_ACCESS_KEY_ID, GH_TOKEN 等）を明示的にクリア
+- OS サンドボックス: macOS は Seatbelt、Linux/WSL2 は bubblewrap で機密ファイル読み取りを拒否
+- 書き込み制限: カレントディレクトリ + /tmp + ツール固有ディレクトリのみ許可
+- 設定ファイル（~/.config/security-wrapper/config）は初回自動生成、バイナリパスも自動検出
+
+### bin/claude, bin/codex, bin/kiro-cli, bin/kiro-cli-chat, bin/gemini (新規)
+- 各 AI エージェントのセキュリティラッパースクリプト
+- PATH 優先度で実体より先に解決され、クレデンシャル分離済みの環境で起動
+- Claude は内蔵 sandbox があるため credential_guard_exec、Codex/Kiro は credential_guard_sandbox_exec を使用
+- AGENT_UNSAFE=1 でバイパス可能
+
+### apps/claude/settings.json
+- sandbox.enabled: true + sandbox.filesystem.denyRead を追加（~/.aws, ~/.ssh, ~/.config/gh, ~/.gnupg）
+- permissions.deny に Bash 経由の機密アクセスパターンを追加
+- permissions.ask に git tag -d, git checkout --, gh pr merge 等を追加
+
+### apps/claude/CLAUDE.md
+- `$(...)` の制約を「回避」から「絶対禁止」に格上げ、PreToolUse hook の限界を明記
+- Codex CLI との連携（codex review, codex exec resume）の使い方を追記
+
+### setup.sh
+- ~/bin ディレクトリへのセキュリティラッパーのシンボリックリンク作成処理を追加
+
+### docs/security/README.md (新規)
+- セキュリティラッパーの全体アーキテクチャ、セットアップ手順、使い方、トラブルシューティングのドキュメント
+
+### docs/security/github-pat-setup.md (新規)
+- GitHub Fine-grained PAT の作成・Keychain 保存・ローテーション手順のガイド
+- エンタープライズ管理者向けの注意事項を含む
+
 ## 2026-03-20 Claude Code ステータスライン対応
 
 ### apps/claude/statusline.py

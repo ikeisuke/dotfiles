@@ -1,0 +1,25 @@
+#!/bin/zsh
+# Kiro CLI セキュリティラッパー
+# ~/bin/kiro-cli → PATH 優先度で実体より先に解決
+# Kiro CLI は sandbox 機能なし → Seatbelt/bwrap で機密ファイル読み取りを制限
+#
+# 設定: ~/.config/security-wrapper/config
+# バイパス: AGENT_UNSAFE=1 kiro-cli
+# プロファイル指定: AGENT_AWS_PROFILE=dev kiro-cli
+
+set -euo pipefail
+
+WRAPPER_NAME="kiro-cli"
+source "${0:A:h}/_credential-guard.sh"
+
+if [[ "${AGENT_UNSAFE:-}" == "1" ]]; then
+  exec "${KIRO_CLI_BIN:-$(path=(${path:#$HOME/bin}) command -v kiro-cli)}" "$@"
+fi
+
+REAL_BIN="$KIRO_CLI_BIN"
+if [[ -z "$REAL_BIN" ]]; then
+  echo "[$WRAPPER_NAME] ERROR: KIRO_CLI_BIN が設定されていません ($CONFIG_FILE)" >&2
+  exit 1
+fi
+
+credential_guard_sandbox_exec "$REAL_BIN" "$@"
