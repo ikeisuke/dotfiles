@@ -143,6 +143,7 @@ _write_aws_profile() {
 }
 
 _default_written=false
+_default_ak="" _default_sk="" _default_st="" _default_region=""
 
 if command -v aws >/dev/null 2>&1 && [[ -n "$_LOAD_PROFILES" ]]; then
   for _profile in ${=_LOAD_PROFILES}; do
@@ -166,6 +167,11 @@ if command -v aws >/dev/null 2>&1 && [[ -n "$_LOAD_PROFILES" ]]; then
         _default_written=true
       fi
 
+      # デフォルトプロファイルのクレデンシャルをキャッシュ（後方の fallback 用）
+      if [[ "$_profile" == "$DEFAULT_AWS_PROFILE" ]]; then
+        _default_ak="$_ak" _default_sk="$_sk" _default_st="$_st" _default_region="$_region"
+      fi
+
       _write_aws_profile "profile $_profile" "$_profile" "$_ak" "$_sk" "$_st" "$_region"
 
       echo "[$_WRAPPER_NAME] AWS: $_profile (一時クレデンシャル)" >&2
@@ -174,16 +180,9 @@ if command -v aws >/dev/null 2>&1 && [[ -n "$_LOAD_PROFILES" ]]; then
     fi
   done
 
-  # DEFAULT_AWS_PROFILE が ALLOWED_AWS_PROFILES の先頭になくても [default] を生成
-  if [[ "$_default_written" == "false" && -n "$DEFAULT_AWS_PROFILE" ]]; then
-    # 既に [profile X] として書き込まれたクレデンシャルから default を複製
-    if grep -q "^\[${DEFAULT_AWS_PROFILE}\]" "$_aws_creds" 2>/dev/null; then
-      _region=$(grep -A1 "^\[profile ${DEFAULT_AWS_PROFILE}\]" "$_aws_config" | grep region | head -1 | cut -d= -f2 | tr -d ' ')
-      _ak=$(grep -A1 "^\[${DEFAULT_AWS_PROFILE}\]" "$_aws_creds" | grep aws_access_key_id | head -1 | cut -d= -f2 | tr -d ' ')
-      _sk=$(grep -A2 "^\[${DEFAULT_AWS_PROFILE}\]" "$_aws_creds" | grep aws_secret_access_key | head -1 | cut -d= -f2 | tr -d ' ')
-      _st=$(grep -A3 "^\[${DEFAULT_AWS_PROFILE}\]" "$_aws_creds" | grep aws_session_token | head -1 | cut -d= -f2 | tr -d ' ')
-      _write_aws_profile "default" "default" "$_ak" "$_sk" "${_st:-}" "${_region:-$_DEFAULT_REGION}"
-    fi
+  # DEFAULT_AWS_PROFILE がループ内で default セクション未生成の場合、キャッシュから生成
+  if [[ "$_default_written" == "false" && -n "$_default_ak" ]]; then
+    _write_aws_profile "default" "default" "$_default_ak" "$_default_sk" "${_default_st:-}" "${_default_region:-$_DEFAULT_REGION}"
   fi
 fi
 
@@ -307,9 +306,9 @@ _setup_sandbox() {
         --dev /dev
         --proc /proc
       )
-      # ホワイトリストのディレクトリを書き込み可能に（未作成なら作成）
+      # ホワイトリストのディレクトリを書き込み可能に（mkdir -p は冪等）
       for _p in "${_SANDBOX_ALLOW_WRITE_PATHS[@]}"; do
-        [[ -d "$_p" ]] || mkdir -p "$_p"
+        mkdir -p "$_p" 2>/dev/null || true
         _sandbox_cmd+=(--bind "$_p" "$_p")
       done
       # 機密ディレクトリを空に差し替え（読み取り拒否）

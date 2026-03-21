@@ -1,25 +1,3 @@
 #!/bin/zsh
-# Codex セキュリティラッパー
-# ~/bin/codex → PATH 優先度で実体より先に解決
-# Codex は denyRead 非対応 → Seatbelt で機密ファイル読み取りを制限
-#
-# 設定: ~/.config/security-wrapper/config
-# バイパス: AGENT_UNSAFE=1 codex
-# プロファイル指定: AGENT_AWS_PROFILE=dev codex
-
-set -euo pipefail
-
 WRAPPER_NAME="codex"
-source "${0:A:h}/_credential-guard.sh"
-
-if [[ "${AGENT_UNSAFE:-}" == "1" ]]; then
-  exec "${CODEX_BIN:-$(path=(${path:#$HOME/bin}) command -v codex)}" "$@"
-fi
-
-REAL_BIN="$CODEX_BIN"
-if [[ -z "$REAL_BIN" ]]; then
-  echo "[$WRAPPER_NAME] ERROR: CODEX_BIN が設定されていません ($CONFIG_FILE)" >&2
-  exit 1
-fi
-
-credential_guard_sandbox_exec "$REAL_BIN" "$@"
+source "${0:A:h}/_agent-wrapper.sh"

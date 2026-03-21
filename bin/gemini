@@ -1,25 +1,3 @@
 #!/bin/zsh
-# Gemini CLI セキュリティラッパー
-# ~/bin/gemini → PATH 優先度で実体より先に解決
-# Gemini CLI は sandbox 機能なし → Seatbelt/bwrap で機密ファイル読み取りを制限
-#
-# 設定: ~/.config/security-wrapper/config
-# バイパス: AGENT_UNSAFE=1 gemini
-# プロファイル指定: AGENT_AWS_PROFILE=dev gemini
-
-set -euo pipefail
-
 WRAPPER_NAME="gemini"
-source "${0:A:h}/_credential-guard.sh"
-
-if [[ "${AGENT_UNSAFE:-}" == "1" ]]; then
-  exec "${GEMINI_BIN:-$(path=(${path:#$HOME/bin}) command -v gemini)}" "$@"
-fi
-
-REAL_BIN="$GEMINI_BIN"
-if [[ -z "$REAL_BIN" ]]; then
-  echo "[$WRAPPER_NAME] ERROR: GEMINI_BIN が設定されていません ($CONFIG_FILE)" >&2
-  exit 1
-fi
-
-credential_guard_sandbox_exec "$REAL_BIN" "$@"
+source "${0:A:h}/_agent-wrapper.sh"
