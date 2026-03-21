@@ -116,7 +116,7 @@ claude
 
 ### "WARN: GitHub PAT 未設定" と表示される
 
-Keychain にトークンが保存されていない。手順 2 を実行する。
+Keychain にトークンが保存されていない。手順 3 を実行する。
 
 ### Permission denied エラー
 

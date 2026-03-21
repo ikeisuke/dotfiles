@@ -77,14 +77,16 @@ else
   cat > "$CONFIG_FILE" <<CONF
 # AI エージェント セキュリティラッパー共通設定
 # このファイルは git 管理外（マシン固有の設定）
-# claude, codex, kiro-cli で共有される
+# claude, codex, kiro-cli, gemini で共有される
 
 # 許可する AWS プロファイル（スペース区切り）
 # エージェントはここに列挙されたプロファイルのみ使用可能
-ALLOWED_AWS_PROFILES="readonly"
+# AGENT_AWS_PROFILES 環境変数でロードするプロファイルを選択可能（許可リスト内に限る）
+ALLOWED_AWS_PROFILES="default"
 
 # デフォルトで使う AWS プロファイル（環境変数 AGENT_AWS_PROFILE で上書き可）
-DEFAULT_AWS_PROFILE="readonly"
+# プロファイルが存在しなければ AWS なしで起動する
+DEFAULT_AWS_PROFILE="default"
 
 # Keychain に保存した GitHub PAT のサービス名
 GH_KEYCHAIN_SERVICE="ai-agent-gh-token"

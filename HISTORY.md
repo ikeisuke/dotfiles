@@ -13,14 +13,19 @@
 - 書き込み制限: カレントディレクトリ + /tmp + ツール固有ディレクトリのみ許可
 - 設定ファイル（~/.config/security-wrapper/config）は初回自動生成、バイナリパスも自動検出
 
+### bin/_agent-wrapper.sh (新規)
+- 共通ラッパーテンプレート: WRAPPER_NAME から BIN 変数名を自動導出
+- 各ツールのラッパーは 3 行に簡素化（source するだけ）
+
 ### bin/claude, bin/codex, bin/kiro-cli, bin/kiro-cli-chat, bin/gemini (新規)
 - 各 AI エージェントのセキュリティラッパースクリプト
 - PATH 優先度で実体より先に解決され、クレデンシャル分離済みの環境で起動
-- Claude は内蔵 sandbox があるため credential_guard_exec、Codex/Kiro は credential_guard_sandbox_exec を使用
+- 全ツール共通で credential_guard_sandbox_exec を使用（ラッパーの Seatbelt/bwrap で保護）
 - AGENT_UNSAFE=1 でバイパス可能
+- AGENT_AWS_PROFILES でロードするプロファイルを選択可能（未指定時は DEFAULT_AWS_PROFILE のみ）
 
 ### apps/claude/settings.json
-- sandbox.enabled: true + sandbox.filesystem.denyRead を追加（~/.aws, ~/.ssh, ~/.config/gh, ~/.gnupg）
+- sandbox.enabled: false（ラッパーの Seatbelt に統一、内蔵 sandbox は TLS 問題のため無効化）
 - permissions.deny に Bash 経由の機密アクセスパターンを追加
 - permissions.ask に git tag -d, git checkout --, gh pr merge 等を追加
 

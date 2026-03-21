@@ -266,6 +266,25 @@ if [ -d "$DIR/bin" ]; then
     link_and_backup "$script" "$HOME/bin/$(basename "$script")"
     chmod +x "$HOME/bin/$(basename "$script")"
   done
+
+  # Linux: セキュリティラッパーの依存パッケージを案内
+  case "$(uname)" in
+    Linux)
+      missing=""
+      if ! command -v bwrap >/dev/null 2>&1; then
+        missing="$missing bubblewrap"
+      fi
+      if ! command -v secret-tool >/dev/null 2>&1; then
+        missing="$missing libsecret-tools"
+      fi
+      if [ -n "$missing" ]; then
+        echo ""
+        echo "  [security-wrapper] Linux 推奨パッケージが未インストールです:"
+        echo "    sudo apt install$missing"
+        echo "  詳細: docs/security/README.md"
+      fi
+      ;;
+  esac
 fi
 
 # Claude Code
