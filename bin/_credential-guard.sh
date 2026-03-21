@@ -19,6 +19,11 @@ if [[ "${AGENT_UNSAFE:-}" == "1" ]]; then
   return 0 2>/dev/null || true
 fi
 
+# 既に sandbox 済みの場合はスキップ（親エージェントから呼ばれた場合）
+if [[ "${_CREDENTIAL_GUARD_SANDBOXED:-}" == "1" ]]; then
+  return 0 2>/dev/null || true
+fi
+
 # ─── デフォルト値 ───────────────────────────────────────
 ALLOWED_AWS_PROFILES=""
 DEFAULT_AWS_PROFILE=""
@@ -402,10 +407,14 @@ credential_guard_exec() {
   exec "${_env_args[@]}" "$@"
 }
 
-# クレデンシャル分離 + OS サンドボックス（sandbox 非内蔵ツール向け: codex, kiro）
+# クレデンシャル分離 + OS サンドボックス
+# 既に sandbox 内（親エージェントから呼ばれた場合）ならネストしない
 credential_guard_sandbox_exec() {
   _build_env_args
-  _setup_sandbox
+  if [[ -z "${_CREDENTIAL_GUARD_SANDBOXED:-}" ]]; then
+    _setup_sandbox
+    _env_args+=(_CREDENTIAL_GUARD_SANDBOXED=1)
+  fi
   _schedule_cleanup
   exec "${_env_args[@]}" "${_sandbox_cmd[@]}" "$@"
 }

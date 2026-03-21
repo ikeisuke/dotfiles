@@ -16,10 +16,18 @@ if [[ -z "${WRAPPER_NAME:-}" ]]; then
 fi
 source "${0:A:h}/_credential-guard.sh"
 
-# AGENT_UNSAFE 時は _credential-guard.sh が早期 return するので config 不要
-if [[ "${AGENT_UNSAFE:-}" == "1" ]]; then
+# AGENT_UNSAFE または sandbox 済み → 実体を直接 exec
+if [[ "${AGENT_UNSAFE:-}" == "1" || "${_CREDENTIAL_GUARD_SANDBOXED:-}" == "1" ]]; then
   # ~/bin を除外した PATH で実体を探して exec
-  exec "$(path=(${path:#$HOME/bin}) command -v "$WRAPPER_NAME")" "$@"
+  _orig_path=("${path[@]}")
+  path=("${path[@]:#$HOME/bin}")
+  REAL_BIN="$(command -v "$WRAPPER_NAME" 2>/dev/null)" || true
+  path=("${_orig_path[@]}")
+  if [[ -z "$REAL_BIN" ]]; then
+    echo "[$WRAPPER_NAME] ERROR: 実体が見つかりません" >&2
+    exit 1
+  fi
+  exec "$REAL_BIN" "$@"
 fi
 
 # BIN 変数名を導出: kiro-cli → KIRO_CLI_BIN
