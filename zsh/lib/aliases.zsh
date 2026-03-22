@@ -19,10 +19,12 @@ if command -v bat >/dev/null 2>&1; then
   alias cat='bat --style=plain'
 fi
 
-# Safety aliases
-alias rm='rm -i'
-alias cp='cp -i'
-alias mv='mv -i'
+# Safety aliases（インタラクティブシェルのみ、AIエージェントの子プロセスに影響させない）
+if [[ -o interactive ]]; then
+  alias rm='rm -i'
+  alias cp='cp -i'
+  alias mv='mv -i'
+fi
 
 # Convenience
 alias mkdir='mkdir -p'

@@ -1,5 +1,16 @@
 # Change History
 
+## 2026-03-22 エイリアス・CLAUDE.md 整理
+
+### zsh/lib/aliases.zsh
+- Safety aliases (rm -i, cp -i, mv -i) をインタラクティブシェルのみに限定（AIエージェントの子プロセスで確認プロンプトが出ないように）
+
+### apps/claude/CLAUDE.md
+- シェルエイリアス回避ルール（\rm 等）を削除（aliases.zsh のガードで不要に）
+
+### bin/gh-token-rotate
+- PAT の有効期限を GitHub API レスポンスヘッダーから取得・表示するように追加
+
 ## 2026-03-22 セキュリティラッパー改善
 
 ### bin/_credential-guard.sh
