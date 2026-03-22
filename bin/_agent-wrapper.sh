@@ -38,9 +38,20 @@ if [[ "${AGENT_UNSAFE:-}" == "1" ]] || _is_sandboxed; then
   # codex: -s はサブコマンドオプションのため、サブコマンドの後に挿入
   case "$WRAPPER_NAME" in
     codex)
+      # -s/--sandbox を danger-full-access に強制上書き（二重 sandbox-exec 防止）
       _codex_args=()
       _sandbox_inserted=false
+      _skip_next=false
       for _arg in "$@"; do
+        if [[ "$_skip_next" == true ]]; then
+          _skip_next=false
+          continue
+        fi
+        # 既存の -s/--sandbox を除去
+        case "$_arg" in
+          -s|--sandbox) echo "[$WRAPPER_NAME] WARN: sandbox 指定を danger-full-access に上書き（二重 sandbox 防止）" >&2; _skip_next=true; continue ;;
+          --sandbox=*) echo "[$WRAPPER_NAME] WARN: sandbox 指定を danger-full-access に上書き（二重 sandbox 防止）" >&2; continue ;;
+        esac
         _codex_args+=("$_arg")
         if [[ "$_sandbox_inserted" == false ]]; then
           case "$_arg" in
