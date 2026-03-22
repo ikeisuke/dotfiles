@@ -31,7 +31,7 @@ if [[ "${AGENT_UNSAFE:-}" == "1" || "${_CREDENTIAL_GUARD_SANDBOXED:-}" == "1" ]]
   _extra_args=()
   if [[ "${_CREDENTIAL_GUARD_SANDBOXED:-}" == "1" ]]; then
     case "$WRAPPER_NAME" in
-      codex) _extra_args=(--sandbox danger-full-access) ;;
+      codex) _extra_args=(-c 'sandbox_permissions=["disk-full-read-access","disk-full-write-access","network-full-access"]') ;;
     esac
   fi
   exec "$REAL_BIN" "${_extra_args[@]}" "$@"
