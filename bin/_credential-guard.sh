@@ -241,7 +241,7 @@ _SANDBOX_DENY_READ_PATHS=(
   "$HOME/.aws"
   "$HOME/.config/gh"
   "$HOME/.gnupg"
-  # "$HOME/.ssh"  # TODO: Claude が env 変数を継承したら deny に戻し HTTPS に統一
+  "$HOME/.ssh"
 )
 
 _SANDBOX_ALLOW_WRITE_PATHS=(
@@ -441,9 +441,11 @@ _build_env_args() {
     _env_args+=(
       GIT_ASKPASS="$_tmpdir/git-askpass"
       GIT_TERMINAL_PROMPT=0
-      GIT_CONFIG_COUNT=1
+      GIT_CONFIG_COUNT=2
       GIT_CONFIG_KEY_0="url.https://github.com/.insteadOf"
       GIT_CONFIG_VALUE_0="git@github.com:"
+      GIT_CONFIG_KEY_1="url.https://github.com/.insteadOf"
+      GIT_CONFIG_VALUE_1="ssh://git@github.com/"
     )
   fi
 }

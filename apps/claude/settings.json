@@ -98,6 +98,7 @@
       "Read(.env)",
       "Read(.env.*)",
       "Read(~/.ssh/**)",
+      "Bash(*~/.ssh/*)",
       "Read(~/.aws/**)",
       "Bash(*aws sso get-role-credentials*)",
       "Bash(*aws configure list-profiles*)",
@@ -107,7 +108,6 @@
     ],
     "ask": [
       "Bash(*~/.aws/*)",
-      "Bash(*~/.ssh/*)",
       "Bash(*~/.config/gh/*)",
       "Bash(git push*--force *)",
       "Bash(git push*--force-with-lease *)",
