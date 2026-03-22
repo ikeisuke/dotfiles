@@ -1,0 +1,80 @@
+#!/bin/zsh
+# GitHub PAT のローテーション（Keychain）
+# Usage: gh-token-rotate [classic|fine-grained]
+
+set -euo pipefail
+
+_SERVICES=(
+  "classic:ai-agent-gh-token-classic"
+  "fine-grained:ai-agent-gh-token-fine-grained"
+)
+
+_check_expiration() {
+  local _token="$1"
+  local _expires=""
+  _expires=$(curl -sS -H "Authorization: Bearer $_token" \
+    -D - -o /dev/null https://api.github.com/rate_limit 2>/dev/null \
+    | grep -i '^github-authentication-token-expiration:' \
+    | sed 's/^[^:]*: *//' | tr -d '\r') || true
+  if [[ -n "$_expires" ]]; then
+    echo "$_expires"
+  else
+    echo "不明（有効期限なし or 無効なトークン）"
+  fi
+}
+
+_rotate() {
+  local _label="$1" _service="$2"
+  local _current=""
+  _current=$(security find-generic-password -s "$_service" -a "$USER" -w 2>/dev/null) || true
+
+  if [[ -n "$_current" ]]; then
+    echo "[$_label] 現在のトークン: ${_current:0:12}..."
+    echo "[$_label] 有効期限: $(_check_expiration "$_current")"
+    echo -n "更新しますか？ [y/N] "
+    read -r _yn
+    [[ "$_yn" != [yY] ]] && echo "スキップ" && return
+    security delete-generic-password -s "$_service" -a "$USER" >/dev/null 2>&1
+  else
+    echo "[$_label] トークン未登録"
+  fi
+
+  echo -n "[$_label] 新しいトークンを入力: "
+  read -rs _token
+  echo
+
+  if [[ -z "$_token" ]]; then
+    echo "[$_label] 空のためスキップ"
+    return
+  fi
+
+  security add-generic-password -s "$_service" -a "$USER" -w "$_token"
+  echo "[$_label] 更新完了 (${_token:0:12}...)"
+}
+
+if [[ $# -gt 0 ]]; then
+  # 引数で指定
+  for _type in "$@"; do
+    _found=false
+    for _entry in "${_SERVICES[@]}"; do
+      _label="${_entry%%:*}"
+      _service="${_entry#*:}"
+      if [[ "$_label" == "$_type" ]]; then
+        _rotate "$_label" "$_service"
+        _found=true
+      fi
+    done
+    if [[ "$_found" == false ]]; then
+      echo "ERROR: 不明な種類 '$_type' (classic / fine-grained)" >&2
+      exit 1
+    fi
+  done
+else
+  # 引数なし: 順番に聞く
+  for _entry in "${_SERVICES[@]}"; do
+    _label="${_entry%%:*}"
+    _service="${_entry#*:}"
+    _rotate "$_label" "$_service"
+    echo
+  done
+fi
