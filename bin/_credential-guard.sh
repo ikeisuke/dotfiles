@@ -267,8 +267,12 @@ _sandbox_cmd=()
 _setup_sandbox() {
   local _cwd="$PWD"
 
-  # git worktree の場合、メインリポジトリの .git ディレクトリも書き込み許可が必要
+  # git worktree の場合:
+  #   - 親リポジトリの toplevel を書き込み許可（git pull 等のため）
+  #   - 他のワークツリーは書き込み拒否（分離を維持）
   local _git_common_dir=""
+  local _git_parent_toplevel=""
+  local _other_worktrees=()
   if command -v git >/dev/null 2>&1; then
     _git_common_dir=$(git rev-parse --git-common-dir 2>/dev/null) || true
     # 相対パスの場合は絶対パスに変換
@@ -278,6 +282,24 @@ _setup_sandbox() {
     # 通常リポジトリ（$_cwd 配下）なら追加不要
     if [[ -n "$_git_common_dir" && "$_git_common_dir" == "$_cwd"/* ]]; then
       _git_common_dir=""
+    elif [[ -n "$_git_common_dir" ]]; then
+      # worktree: 親リポジトリの toplevel を取得
+      _git_parent_toplevel=$(git -C "$_git_common_dir" rev-parse --show-toplevel 2>/dev/null) || true
+      # 他のワークツリーを列挙（自分自身は除外）
+      local _wt_path=""
+      while IFS= read -r _line; do
+        case "$_line" in
+          worktree\ *)
+            _wt_path="${_line#worktree }"
+            ;;
+          "")
+            if [[ -n "$_wt_path" && "$_wt_path" != "$_cwd" && "$_wt_path" != "$_git_parent_toplevel" ]]; then
+              _other_worktrees+=("$_wt_path")
+            fi
+            _wt_path=""
+            ;;
+        esac
+      done < <(git worktree list --porcelain 2>/dev/null; echo)
     fi
   fi
 
@@ -302,8 +324,10 @@ _setup_sandbox() {
           echo '  (require-not'
           echo '    (require-any'
           echo "      (subpath \"$_cwd\")"
-          # git worktree: メインリポジトリの .git ディレクトリ
-          [[ -n "$_git_common_dir" ]] && echo "      (subpath \"$_git_common_dir\")"
+          # git worktree: 親リポジトリ全体を書き込み許可
+          [[ -n "$_git_parent_toplevel" ]] && echo "      (subpath \"$_git_parent_toplevel\")"
+          # 通常リポジトリで .git が外にある場合のフォールバック
+          [[ -z "$_git_parent_toplevel" && -n "$_git_common_dir" ]] && echo "      (subpath \"$_git_common_dir\")"
           echo '      (subpath "/tmp")'
           echo '      (subpath "/private/tmp")'
           echo '      (subpath "/private/var/folders")'
@@ -319,6 +343,17 @@ _setup_sandbox() {
             echo "      (literal \"$_f\")"
           done
           echo ')))'
+          # git worktree: 他のワークツリーへの書き込みを拒否
+          # （親リポジトリを許可した上で、他ワークツリーだけピンポイントで deny）
+          if [[ ${#_other_worktrees[@]} -gt 0 ]]; then
+            echo ''
+            echo ';; 他のワークツリーへの書き込みを拒否'
+            echo '(deny file-write*'
+            for _wt in "${_other_worktrees[@]}"; do
+              echo "  (subpath \"$_wt\")"
+            done
+            echo ')'
+          fi
         else
           echo ';; デバッグ: 書き込み制限を無効化（読み取り拒否のみ有効）'
         fi
@@ -381,8 +416,13 @@ _setup_sandbox() {
         -p CoredumpFilter=0
         -p KeyringMode=private
       )
-      # git worktree: メインリポジトリの .git ディレクトリを書き込み許可
-      if [[ -n "$_git_common_dir" ]]; then
+      # git worktree: 親リポジトリ全体を書き込み許可、他ワークツリーはアクセス不可
+      if [[ -n "$_git_parent_toplevel" ]]; then
+        _sandbox_cmd+=(-p "ReadWritePaths=$_git_parent_toplevel")
+        for _wt in "${_other_worktrees[@]}"; do
+          [[ -d "$_wt" ]] && _sandbox_cmd+=(-p "InaccessiblePaths=$_wt")
+        done
+      elif [[ -n "$_git_common_dir" ]]; then
         _sandbox_cmd+=(-p "ReadWritePaths=$_git_common_dir")
       fi
       # ホワイトリストのディレクトリを書き込み可能に
