@@ -319,32 +319,73 @@ _setup_sandbox() {
       _sandbox_cmd=(sandbox-exec -f "$_sb")
       ;;
     Linux)
-      if ! command -v bwrap >/dev/null 2>&1; then
-        echo "[$_WRAPPER_NAME] WARN: bwrap 未インストール（sudo apt install bubblewrap）、サンドボックスなしで起動" >&2
+      if ! command -v systemd-run >/dev/null 2>&1; then
+        echo "[$_WRAPPER_NAME] WARN: systemd-run が利用できません、サンドボックスなしで起動" >&2
         return
       fi
-      # 全体を読み取り専用でマウントし、書き込み可能なパスだけ bind し直す
       _sandbox_cmd=(
-        bwrap
-        --ro-bind / /
-        --bind "$_cwd" "$_cwd"
-        --bind /tmp /tmp
-        --bind "$_tmpdir" "$_tmpdir"
-        --dev /dev
-        --proc /proc
+        systemd-run
+        --user --pipe --wait --collect --same-dir
+        # 環境変数は _env_args の env 経由で渡すため PATH のみ明示
+        -E PATH="$PATH"
+        # 権限昇格防止
+        -p NoNewPrivileges=yes
+        -p CapabilityBoundingSet=
+        -p AmbientCapabilities=
+        -p RestrictSUIDSGID=yes
+        -p LockPersonality=yes
+        # デバイス制限
+        -p PrivateDevices=yes
+        -p DevicePolicy=closed
+        -p "DeviceAllow=/dev/null rw"
+        -p "DeviceAllow=/dev/random r"
+        -p "DeviceAllow=/dev/urandom r"
+        # プロセス・IPC 分離
+        -p PrivateUsers=yes
+        -p PrivateMounts=yes
+        -p PrivateIPC=yes
+        -p PrivateTmp=yes
+        # ネットワーク（API 通信に必要なため許可、ソケット種別のみ制限）
+        -p PrivateNetwork=no
+        -p "RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6"
+        # ファイルシステム: read-only + ホワイトリスト書き込み
+        -p ProtectSystem=strict
+        -p ProtectHome=read-only
+        -p "ReadWritePaths=$_cwd"
+        -p "ReadWritePaths=$_tmpdir"
+        # カーネル保護
+        -p ProtectProc=invisible
+        -p ProtectClock=yes
+        -p ProtectHostname=yes
+        -p ProtectKernelLogs=yes
+        -p ProtectKernelModules=yes
+        -p ProtectKernelTunables=yes
+        -p ProtectControlGroups=yes
+        # syscall フィルタ
+        -p SystemCallArchitectures=native
+        -p "SystemCallFilter=@system-service"
+        -p "SystemCallFilter=~@privileged @debug"
+        -p SystemCallErrorNumber=EPERM
+        # namespace・リアルタイム制限
+        -p RestrictNamespaces=yes
+        -p RestrictRealtime=yes
+        # その他
+        -p UMask=0077
+        -p CoredumpFilter=0
+        -p KeyringMode=private
       )
       # git worktree: メインリポジトリの .git ディレクトリを書き込み許可
       if [[ -n "$_git_common_dir" ]]; then
-        _sandbox_cmd+=(--bind "$_git_common_dir" "$_git_common_dir")
+        _sandbox_cmd+=(-p "ReadWritePaths=$_git_common_dir")
       fi
-      # ホワイトリストのディレクトリを書き込み可能に（mkdir -p は冪等）
+      # ホワイトリストのディレクトリを書き込み可能に
       for _p in "${_SANDBOX_ALLOW_WRITE_PATHS[@]}"; do
         mkdir -p "$_p" 2>/dev/null || true
-        _sandbox_cmd+=(--bind "$_p" "$_p")
+        _sandbox_cmd+=(-p "ReadWritePaths=$_p")
       done
-      # 機密ディレクトリを空に差し替え（読み取り拒否）
+      # 機密ディレクトリをアクセス不可に
       for _p in "${_SANDBOX_DENY_READ_PATHS[@]}"; do
-        [[ -d "$_p" ]] && _sandbox_cmd+=(--tmpfs "$_p")
+        [[ -d "$_p" ]] && _sandbox_cmd+=(-p "InaccessiblePaths=$_p")
       done
       ;;
   esac
