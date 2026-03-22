@@ -1,5 +1,39 @@
 # Change History
 
+## 2026-03-22 セキュリティラッパー改善
+
+### bin/_credential-guard.sh
+- Linux sandbox を bubblewrap から systemd-run に移行（seccomp/cgroup/カーネル保護を統合）
+- sandbox 検出を env 変数 + ファイルアクセス（~/.aws/config 読み取り可否）の2段構えに
+- ~/.ssh を Seatbelt deny リストから除外（Claude が env 変数を継承しないため SSH→HTTPS 変換が効かない）
+- SSH→HTTPS git 変換設定（GIT_ASKPASS / GIT_CONFIG）を追加（env 継承するツール向け）
+- GH_KEYCHAIN_SERVICE を classic/fine-grained の2種対応（ai-agent-gh-token-classic / ai-agent-gh-token-fine-grained）
+- P1修正: Linux bwrap 未インストール時に SANDBOXED フラグが誤設定される問題
+- P2修正: bwrap worktree の bind 引数が zsh で単一要素になる問題
+- Seatbelt の known_hosts 読み取り許可を追加後に削除（SSH→HTTPS に統一）
+
+### bin/_agent-wrapper.sh
+- codex exec: -s danger-full-access をサブコマンド後に挿入（グローバル位置では無効）
+- codex review: -c 'sandbox_mode="danger-full-access"' で内蔵 sandbox 無効化
+- ユーザー指定の -s/--sandbox を danger-full-access に強制上書き（警告付き）
+- sandbox 検出ヘルパー _is_sandboxed() を追加（env 変数 or ファイルアクセス）
+- exec ログを AGENT_SANDBOX_DEBUG 条件付きに
+
+### apps/claude/settings.json
+- PreToolUse hook 追加: sandbox 未適用時に全ツール実行をブロック（exit 2）
+- permissions.deny から ~/.aws, ~/.ssh, ~/.config/gh の Bash パターンを ask に移動
+
+### docs/security/README.md
+- Linux sandbox を bubblewrap → systemd-run に更新
+- Codex 内蔵 sandbox 対策（exec/review 別のフラグ）を追記
+- sandbox 検出方式（env 変数 + ファイルアクセス）を追記
+- Claude Code 固有の保護（PreToolUse hook, permissions）セクション追加
+- ~/.ssh の扱い変更と理由を追記
+
+### docs/security/github-pat-setup.md
+- Keychain サービス名を classic/fine-grained の2種対応に更新
+- config での切り替え方法を追記
+
 ## 2026-03-22 AI エージェント セキュリティラッパー追加
 
 ### bin/_credential-guard.sh (新規)

@@ -13,10 +13,10 @@ AI コーディングエージェント（Claude Code, Codex, Kiro CLI, Gemini C
 ```
 保護層                          仕組み                     回避可能性
 ────────────────────────────────────────────────────────────────────
-Layer 1: OS サンドボックス       Seatbelt / bubblewrap      不可（カーネル強制）
+Layer 1: OS サンドボックス       Seatbelt / systemd-run     不可（カーネル強制）
 Layer 2: クレデンシャル分離      環境変数で一時認証を注入    不可（起動前に確定）
 Layer 3: サービス側制限          IAM Role / Fine-grained PAT 不可（サーバ側で拒否）
-Layer 4: ツール固有の設定        permissions.deny 等         低〜中（AI の判断に依存）
+Layer 4: ツール固有の設定        permissions.deny / hook 等  低〜中（AI の判断に依存）
 ```
 
 ## ファイル構成
@@ -34,7 +34,7 @@ bin/
 ~/.config/security-wrapper/
 └── config                    # マシン固有の設定（git 管理外、初回自動生成）
 
-apps/claude/settings.json     # Claude Code: permissions.deny 等
+apps/claude/settings.json     # Claude Code: permissions.deny / PreToolUse hook 等
 ```
 
 ## 各ツールの保護レベル
@@ -42,10 +42,15 @@ apps/claude/settings.json     # Claude Code: permissions.deny 等
 | 保護 | Claude Code | Codex | Kiro CLI | Gemini CLI |
 |------|------------|-------|----------|------------|
 | クレデンシャル分離 | `credential_guard_sandbox_exec` | `credential_guard_sandbox_exec` | `credential_guard_sandbox_exec` | `credential_guard_sandbox_exec` |
-| denyRead | ラッパーが Seatbelt/bwrap 適用 | ラッパーが Seatbelt/bwrap 適用 | ラッパーが Seatbelt/bwrap 適用 | ラッパーが Seatbelt/bwrap 適用 |
-| 書き込み制限 | ラッパーが Seatbelt/bwrap 適用 | ラッパーが Seatbelt/bwrap 適用 | ラッパーが Seatbelt/bwrap 適用 | ラッパーが Seatbelt/bwrap 適用 |
+| OS サンドボックス | Seatbelt（※注） | Seatbelt / systemd-run | Seatbelt / systemd-run | Seatbelt / systemd-run |
+| 書き込み制限 | Seatbelt ホワイトリスト | Seatbelt / systemd-run | Seatbelt / systemd-run | Seatbelt / systemd-run |
+| permissions.deny | あり | なし | なし | なし |
+| PreToolUse hook | あり（sandbox 未適用時ブロック） | なし | なし | なし |
 | ネットワーク制限 | なし | 内蔵（デフォルト遮断） | なし | なし |
-| permissions deny | あり | なし | なし | なし |
+
+> **※注**: Claude Code は sandbox-exec 内で起動されるが、子プロセス（Bash ツール）に
+> sandbox が継承されない問題あり（[#2](../../issues/2)）。`permissions.deny` と
+> PreToolUse hook で補完している。
 
 ## セットアップ
 
@@ -79,6 +84,9 @@ ALLOWED_AWS_PROFILES="dev staging"
 # デフォルトプロファイル
 DEFAULT_AWS_PROFILE="dev"
 
+# Keychain サービス名（ai-agent-gh-token-classic / ai-agent-gh-token-fine-grained）
+GH_KEYCHAIN_SERVICE="ai-agent-gh-token-classic"
+
 # バイナリパスは自動検出済み（通常編集不要）
 CLAUDE_BIN="/opt/homebrew/bin/claude"
 CODEX_BIN="/opt/homebrew/bin/codex"
@@ -87,20 +95,19 @@ KIRO_CLI_CHAT_BIN="/Users/you/.local/bin/kiro-cli-chat"
 GEMINI_BIN="/opt/homebrew/bin/gemini"
 ```
 
-### 4. GitHub Fine-grained PAT を設定
+### 4. GitHub PAT を設定
 
 [github-pat-setup.md](./github-pat-setup.md) を参照。
+Fine-grained と Classic の2種類を別々の Keychain サービス名で保持できる。
 
 ### 5. Linux/WSL2 の場合
 
-bubblewrap をインストール:
+systemd-run を利用（systemd 環境なら追加インストール不要）:
 
 ```bash
-sudo apt install bubblewrap    # Ubuntu/Debian
-sudo dnf install bubblewrap    # Fedora
+# WSL2 で systemd が有効か確認
+systemctl --user status
 ```
-
-未インストールの場合はサンドボックスなし（クレデンシャル分離のみ）で起動する。
 
 GitHub トークンは `secret-tool`（GNOME Keyring）で管理:
 
@@ -108,10 +115,10 @@ GitHub トークンは `secret-tool`（GNOME Keyring）で管理:
 sudo apt install libsecret-tools    # Ubuntu/Debian
 
 # トークンを保存
-secret-tool store --label="GitHub PAT for AI agents" service ai-agent-gh-token account "$USER"
+secret-tool store --label="GitHub PAT for AI agents" service ai-agent-gh-token-classic account "$USER"
 
 # 確認
-secret-tool lookup service ai-agent-gh-token account "$USER"
+secret-tool lookup service ai-agent-gh-token-classic account "$USER"
 ```
 
 `secret-tool` 未インストールの場合は既存の `GH_TOKEN` / `GITHUB_TOKEN` 環境変数がそのまま継承される。
@@ -145,17 +152,68 @@ AGENT_AWS_PROFILE  →  AWS_PROFILE  →  config の DEFAULT_AWS_PROFILE
 （最優先）            （シェルの設定）   （フォールバック）
 ```
 
-## サンドボックスが拒否するパス
+## サンドボックスの保護
+
+### 読み取り拒否パス
 
 以下のディレクトリはカーネルレベルで読み取りが拒否される:
 
-| パス | 内容 |
-|------|------|
-| `~/.aws` | AWS クレデンシャル、SSO キャッシュ、設定 |
-| `~/.ssh` | SSH 秘密鍵、known_hosts |
-| `~/.config/gh` | GitHub CLI トークン |
-| `~/.gnupg` | GPG 秘密鍵 |
-| `~/.config/security-wrapper` | ラッパー設定（改ざん防止） |
+| パス | 内容 | 備考 |
+|------|------|------|
+| `~/.aws` | AWS クレデンシャル、SSO キャッシュ、設定 | |
+| `~/.config/gh` | GitHub CLI トークン | |
+| `~/.gnupg` | GPG 秘密鍵 | |
+| `~/.ssh` | SSH 秘密鍵、known_hosts | 現在は除外（※） |
+
+> **※ ~/.ssh について**: ラッパーは SSH→HTTPS 変換（`GIT_CONFIG` + `GIT_ASKPASS`）を
+> 設定するが、Claude Code が env 変数を子プロセスに継承しないため、現在は deny リストから
+> 除外して SSH を許可している。将来的に解決したら deny に戻す。
+
+### sandbox 検出（ネスト防止）
+
+エージェントが別のエージェントを呼ぶ場合（Claude → Codex 等）、二重 sandbox を防止する。
+検出は2段構え:
+
+1. `_CREDENTIAL_GUARD_SANDBOXED=1` 環境変数（env を継承するツール向け）
+2. `~/.aws/config` の読み取り可否（Claude のように env を継承しないツール向け）
+
+### Codex の内蔵 sandbox 対策
+
+Codex は自身で sandbox-exec を適用するため、ラッパーの Seatbelt と競合する。
+サブコマンドに応じて内蔵 sandbox を無効化:
+
+| サブコマンド | 方式 |
+|-------------|------|
+| `exec` / `e` | `-s danger-full-access` をサブコマンド後に挿入 |
+| `review` | `-c 'sandbox_mode="danger-full-access"'` をサブコマンド後に挿入 |
+
+ユーザーが `-s` / `--sandbox` を指定した場合は `danger-full-access` に強制上書きされ、
+警告が表示される（二重 sandbox 防止のため）。
+
+## Claude Code 固有の保護
+
+### permissions.deny / permissions.ask
+
+`apps/claude/settings.json` で設定:
+
+- **deny**: `~/.aws`, `~/.ssh` の Read、`aws sso get-role-credentials` 等の直接実行
+- **ask**: `~/.aws`, `~/.ssh`, `~/.config/gh` を含む Bash コマンド（確認ダイアログ）
+
+### PreToolUse hook
+
+sandbox 未適用で起動した場合、全ツール実行をブロック:
+
+```json
+"PreToolUse": [{
+  "hooks": [{
+    "type": "command",
+    "command": "if [ -r ~/.aws/config ]; then echo 'sandbox未適用です。~/bin/claude から起動し直してください' >&2; exit 2; fi"
+  }]
+}]
+```
+
+- `~/.aws/config` が読める → sandbox 未適用 → exit 2 でブロック
+- `~/.aws/config` が読めない → sandbox 適用済み → exit 0 で許可
 
 ## 動作確認
 
@@ -163,7 +221,6 @@ AGENT_AWS_PROFILE  →  AWS_PROFILE  →  config の DEFAULT_AWS_PROFILE
 
 ```
 cat ~/.aws/config
-cat ~/.ssh/id_ed25519
 ```
 
 Claude Code の場合は Read ツールでも確認:
@@ -171,12 +228,6 @@ Claude Code の場合は Read ツールでも確認:
 - `Operation not permitted` → sandbox（カーネルレベル）
 
 ## トラブルシューティング
-
-### "WARN: bwrap 未インストール" (Linux)
-
-```bash
-sudo apt install bubblewrap
-```
 
 ### "AWS プロファイルのクレデンシャル取得失敗"
 
@@ -188,7 +239,10 @@ aws sso login --profile <プロファイル名>
 
 ### サンドボックスのデバッグ
 
-`AGENT_SANDBOX_DEBUG=1` で起動すると、書き込み制限を無効化する（読み取り拒否は有効のまま）。
+`AGENT_SANDBOX_DEBUG=1` で起動すると:
+- 書き込み制限を無効化する（読み取り拒否は有効のまま）
+- exec コマンドを stderr に表示
+
 `find -newer` と組み合わせてホワイトリスト外への書き込み先を特定する:
 
 ```bash
