@@ -163,11 +163,11 @@ AGENT_AWS_PROFILE  →  AWS_PROFILE  →  config の DEFAULT_AWS_PROFILE
 | `~/.aws` | AWS クレデンシャル、SSO キャッシュ、設定 | |
 | `~/.config/gh` | GitHub CLI トークン | |
 | `~/.gnupg` | GPG 秘密鍵 | |
-| `~/.ssh` | SSH 秘密鍵、known_hosts | 現在は除外（※） |
+| `~/.ssh` | SSH 秘密鍵、known_hosts | |
 
-> **※ ~/.ssh について**: ラッパーは SSH→HTTPS 変換（`GIT_CONFIG` + `GIT_ASKPASS`）を
-> 設定するが、Claude Code が env 変数を子プロセスに継承しないため、現在は deny リストから
-> 除外して SSH を許可している。将来的に解決したら deny に戻す。
+> **SSH→HTTPS 変換**: git の SSH URL（`git@github.com:` / `ssh://git@github.com/`）は
+> `GIT_CONFIG` env 変数で HTTPS に自動変換され、`GIT_ASKPASS` 経由で `GH_TOKEN` を使って認証する。
+> これにより SSH 鍵なしで git 操作が可能。
 
 ### sandbox 検出（ネスト防止）
 
@@ -196,8 +196,8 @@ Codex は自身で sandbox-exec を適用するため、ラッパーの Seatbelt
 
 `apps/claude/settings.json` で設定:
 
-- **deny**: `~/.aws`, `~/.ssh` の Read、`aws sso get-role-credentials` 等の直接実行
-- **ask**: `~/.aws`, `~/.ssh`, `~/.config/gh` を含む Bash コマンド（確認ダイアログ）
+- **deny**: `~/.aws`, `~/.ssh` の Read/Bash、`aws sso get-role-credentials` 等の直接実行
+- **ask**: `~/.aws`, `~/.config/gh` を含む Bash コマンド（確認ダイアログ）
 
 ### PreToolUse hook
 

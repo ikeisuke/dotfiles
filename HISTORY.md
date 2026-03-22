@@ -1,5 +1,17 @@
 # Change History
 
+## 2026-03-22 SSH→HTTPS 完全移行
+
+### bin/_credential-guard.sh
+- ~/.ssh を Seatbelt deny リストに復帰（env 変数が正しく継承されることを確認済み）
+- ssh://git@github.com/ 形式の insteadOf 変換を追加（GIT_CONFIG_COUNT=2）
+
+### apps/claude/settings.json
+- Bash(*~/.ssh/*) を ask → deny に移動
+
+### docs/security/README.md
+- ~/.ssh の除外注記を削除、SSH→HTTPS 変換の説明に更新
+
 ## 2026-03-22 エイリアス・CLAUDE.md 整理
 
 ### zsh/lib/aliases.zsh
