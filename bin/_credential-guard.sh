@@ -20,7 +20,13 @@ if [[ "${AGENT_UNSAFE:-}" == "1" ]]; then
 fi
 
 # 既に sandbox 済みの場合はスキップ（親エージェントから呼ばれた場合）
+# env 変数チェック（正常に継承される環境向け）
+# + ファイルアクセスチェック（Claude のように env を継承しないツール向け）
 if [[ "${_CREDENTIAL_GUARD_SANDBOXED:-}" == "1" ]]; then
+  return 0 2>/dev/null || true
+fi
+if [[ -f "$HOME/.aws/config" ]] && ! test -r "$HOME/.aws/config" 2>/dev/null; then
+  echo "[$_WRAPPER_NAME] sandbox 検出（~/.aws/config 読み取り不可）: クレデンシャル分離をスキップ" >&2
   return 0 2>/dev/null || true
 fi
 
@@ -474,6 +480,6 @@ credential_guard_sandbox_exec() {
     fi
   fi
   _schedule_cleanup
-  [[ "${AGENT_SANDBOX_DEBUG:-}" == "1" ]] && echo "[$_WRAPPER_NAME] exec: ${_sandbox_cmd[*]} $*" >&2
+  echo "[$_WRAPPER_NAME] exec: ${_sandbox_cmd[*]} $*" >&2
   exec "${_env_args[@]}" "${_sandbox_cmd[@]}" "$@"
 }
