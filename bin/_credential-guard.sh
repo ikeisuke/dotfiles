@@ -232,9 +232,9 @@ fi
 
 _SANDBOX_DENY_READ_PATHS=(
   "$HOME/.aws"
-  "$HOME/.ssh"
   "$HOME/.config/gh"
   "$HOME/.gnupg"
+  # "$HOME/.ssh"  # TODO: Claude が env 変数を継承したら deny に戻し HTTPS に統一
 )
 
 _SANDBOX_ALLOW_WRITE_PATHS=(
@@ -328,12 +328,15 @@ _setup_sandbox() {
         bwrap
         --ro-bind / /
         --bind "$_cwd" "$_cwd"
-        ${_git_common_dir:+--bind "$_git_common_dir" "$_git_common_dir"}
         --bind /tmp /tmp
         --bind "$_tmpdir" "$_tmpdir"
         --dev /dev
         --proc /proc
       )
+      # git worktree: メインリポジトリの .git ディレクトリを書き込み許可
+      if [[ -n "$_git_common_dir" ]]; then
+        _sandbox_cmd+=(--bind "$_git_common_dir" "$_git_common_dir")
+      fi
       # ホワイトリストのディレクトリを書き込み可能に（mkdir -p は冪等）
       for _p in "${_SANDBOX_ALLOW_WRITE_PATHS[@]}"; do
         mkdir -p "$_p" 2>/dev/null || true
@@ -383,6 +386,17 @@ _build_env_args() {
   )
   if [[ -n "$_gh_token" ]]; then
     _env_args+=(GH_TOKEN="$_gh_token")
+    # SSH は秘密鍵・エージェントともにブロック済みのため HTTPS に統一
+    # git の SSH URL を自動で HTTPS に変換し、GH_TOKEN で認証する
+    printf '#!/bin/sh\necho "$GH_TOKEN"\n' > "$_tmpdir/git-askpass"
+    chmod +x "$_tmpdir/git-askpass"
+    _env_args+=(
+      GIT_ASKPASS="$_tmpdir/git-askpass"
+      GIT_TERMINAL_PROMPT=0
+      GIT_CONFIG_COUNT=1
+      GIT_CONFIG_KEY_0="url.https://github.com/.insteadOf"
+      GIT_CONFIG_VALUE_0="git@github.com:"
+    )
   fi
 }
 
@@ -413,8 +427,12 @@ credential_guard_sandbox_exec() {
   _build_env_args
   if [[ -z "${_CREDENTIAL_GUARD_SANDBOXED:-}" ]]; then
     _setup_sandbox
-    _env_args+=(_CREDENTIAL_GUARD_SANDBOXED=1)
+    # sandbox が実際に適用された場合のみフラグを設定（Linux で bwrap 未インストール時はスキップ）
+    if [[ ${#_sandbox_cmd[@]} -gt 0 ]]; then
+      _env_args+=(_CREDENTIAL_GUARD_SANDBOXED=1)
+    fi
   fi
   _schedule_cleanup
+  [[ "${AGENT_SANDBOX_DEBUG:-}" == "1" ]] && echo "[$_WRAPPER_NAME] exec: ${_sandbox_cmd[*]} $*" >&2
   exec "${_env_args[@]}" "${_sandbox_cmd[@]}" "$@"
 }

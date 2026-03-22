@@ -99,9 +99,6 @@
       "Read(.env.*)",
       "Read(~/.ssh/**)",
       "Read(~/.aws/**)",
-      "Bash(*~/.aws/*)",
-      "Bash(*~/.ssh/*)",
-      "Bash(*~/.config/gh/*)",
       "Bash(*aws sso get-role-credentials*)",
       "Bash(*aws configure list-profiles*)",
       "Bash(*aws configure export-credentials*)",
@@ -109,6 +106,9 @@
       "Bash(*security dump-keychain*)"
     ],
     "ask": [
+      "Bash(*~/.aws/*)",
+      "Bash(*~/.ssh/*)",
+      "Bash(*~/.config/gh/*)",
       "Bash(git push*--force *)",
       "Bash(git push*--force-with-lease *)",
       "Bash(git branch*-D *)",
@@ -127,6 +127,16 @@
   },
   "enabledMcpjsonServers": [],
   "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -r ~/.aws/config ]; then echo 'sandbox未適用です。~/bin/claude から起動し直してください' >&2; exit 2; fi"
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "hooks": [

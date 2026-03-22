@@ -27,13 +27,13 @@ if [[ "${AGENT_UNSAFE:-}" == "1" || "${_CREDENTIAL_GUARD_SANDBOXED:-}" == "1" ]]
     echo "[$WRAPPER_NAME] ERROR: 実体が見つかりません" >&2
     exit 1
   fi
-  # sandbox 済みの場合、ツールの内蔵 sandbox を無効化（二重 sandbox 防止）
+  # ツールの内蔵 sandbox を無効化（ラッパーの Seatbelt/bwrap に統一）
+  # codex: 内蔵 sandbox-exec がラッパーの Seatbelt と競合するため常に無効化
   _extra_args=()
-  if [[ "${_CREDENTIAL_GUARD_SANDBOXED:-}" == "1" ]]; then
-    case "$WRAPPER_NAME" in
-      codex) _extra_args=(-c 'sandbox_permissions=["disk-full-read-access","disk-full-write-access","network-full-access"]') ;;
-    esac
-  fi
+  case "$WRAPPER_NAME" in
+    codex) _extra_args=(-s danger-full-access) ;;
+  esac
+  [[ "${AGENT_SANDBOX_DEBUG:-}" == "1" ]] && echo "[$WRAPPER_NAME] exec: $REAL_BIN ${_extra_args[*]} $*" >&2
   exec "$REAL_BIN" "${_extra_args[@]}" "$@"
 fi
 
