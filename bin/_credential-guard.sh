@@ -33,7 +33,7 @@ fi
 # ─── デフォルト値 ───────────────────────────────────────
 ALLOWED_AWS_PROFILES=""
 DEFAULT_AWS_PROFILE=""
-GH_KEYCHAIN_SERVICE="ai-agent-gh-token"
+GH_KEYCHAIN_SERVICE="ai-agent-gh-token-classic"
 _DEFAULT_REGION="ap-northeast-1"
 
 # バイナリパス（マシンごとに異なる可能性がある）
@@ -100,7 +100,8 @@ ALLOWED_AWS_PROFILES="default"
 DEFAULT_AWS_PROFILE="default"
 
 # Keychain に保存した GitHub PAT のサービス名
-GH_KEYCHAIN_SERVICE="ai-agent-gh-token"
+# ai-agent-gh-token-fine-grained / ai-agent-gh-token-classic
+GH_KEYCHAIN_SERVICE="ai-agent-gh-token-classic"
 
 # 各ツールの実体パス（自動検出済み、必要に応じて修正）
 CLAUDE_BIN="$(_detect_bin claude)"
@@ -480,6 +481,6 @@ credential_guard_sandbox_exec() {
     fi
   fi
   _schedule_cleanup
-  echo "[$_WRAPPER_NAME] exec: ${_sandbox_cmd[*]} $*" >&2
+  [[ "${AGENT_SANDBOX_DEBUG:-}" == "1" ]] && echo "[$_WRAPPER_NAME] exec: ${_sandbox_cmd[*]} $*" >&2
   exec "${_env_args[@]}" "${_sandbox_cmd[@]}" "$@"
 }

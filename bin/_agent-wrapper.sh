@@ -55,11 +55,11 @@ if [[ "${AGENT_UNSAFE:-}" == "1" ]] || _is_sandboxed; then
           esac
         fi
       done
-      echo "[$WRAPPER_NAME] exec: $REAL_BIN ${_codex_args[*]}" >&2
+      [[ "${AGENT_SANDBOX_DEBUG:-}" == "1" ]] && echo "[$WRAPPER_NAME] exec: $REAL_BIN ${_codex_args[*]}" >&2
       exec "$REAL_BIN" "${_codex_args[@]}"
       ;;
   esac
-  echo "[$WRAPPER_NAME] exec: $REAL_BIN $*" >&2
+  [[ "${AGENT_SANDBOX_DEBUG:-}" == "1" ]] && echo "[$WRAPPER_NAME] exec: $REAL_BIN $*" >&2
   exec "$REAL_BIN" "$@"
 fi
 
