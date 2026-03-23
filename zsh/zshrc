@@ -68,4 +68,3 @@ CDK_DISABLE_CLI_TELEMETRY=true
 source_if_exists ~/.zshrc.local
 
 path_prepend "$HOME/.local/bin"
-path_prepend "$HOME/bin"

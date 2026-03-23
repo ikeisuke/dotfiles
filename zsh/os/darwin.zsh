@@ -22,4 +22,3 @@ fi
 
 # Homebrew paths
 path_prepend /opt/homebrew/opt/openjdk/bin
-path_prepend ~/bin

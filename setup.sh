@@ -258,16 +258,21 @@ if check_dependency tmux; then
   fi
 fi
 
-# ~/bin (security wrappers)
-if [ -d "$DIR/bin" ]; then
-  mkdir -p ~/bin
-  for script in "$DIR/bin"/*; do
-    [ -f "$script" ] || continue
-    link_and_backup "$script" "$HOME/bin/$(basename "$script")"
-    chmod +x "$HOME/bin/$(basename "$script")"
-  done
+# jailrun (AI agent security wrapper)
+echo ""
+echo "================================================"
+echo "jailrun setup"
+echo "================================================"
+if command -v jailrun >/dev/null 2>&1; then
+  echo "✓ jailrun already installed ($(command -v jailrun))"
+else
+  echo "jailrun is not installed."
+  echo "  Install from: https://github.com/ikeisuke/jailrun"
+  echo "    git clone https://github.com/ikeisuke/jailrun.git"
+  echo "    cd jailrun && make install"
+  echo ""
 
-  # Linux: セキュリティラッパーの依存パッケージを案内
+  # Linux: 依存パッケージを案内
   case "$(uname)" in
     Linux)
       missing=""
@@ -278,10 +283,8 @@ if [ -d "$DIR/bin" ]; then
         missing="$missing gnome-keyring"
       fi
       if [ -n "$missing" ]; then
-        echo ""
-        echo "  [security-wrapper] Linux 推奨パッケージが未インストールです:"
+        echo "  [jailrun] Linux 推奨パッケージが未インストールです:"
         echo "    sudo apt install$missing"
-        echo "  詳細: docs/security/README.md"
       fi
       ;;
   esac

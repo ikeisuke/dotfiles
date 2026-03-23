@@ -12,9 +12,10 @@
 ## リポジトリ構成
 
 - `zsh/` - モジュラーな zsh 設定（zshenv, zprofile, zshrc から各モジュールを読み込み）
-- `apps/` - アプリ個別設定（gh, ghostty, git, starship, tmux, vim）
+- `apps/` - アプリ個別設定（gh, ghostty, git, starship, tmux, vim, claude）
 - `Brewfile` - Homebrew 依存管理
 - `setup.sh` - 初回セットアップスクリプト（シンボリックリンク作成、brew bundle 等）
+- AI エージェントのセキュリティラッパーは [jailrun](https://github.com/ikeisuke/jailrun) リポジトリに分離
 
 ## 設計方針
 

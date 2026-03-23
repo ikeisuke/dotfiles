@@ -1,3 +1,0 @@
-#!/bin/zsh
-WRAPPER_NAME="kiro-cli-chat"
-source "${0:A:h}/_agent-wrapper.sh"

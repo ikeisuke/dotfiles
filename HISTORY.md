@@ -1,5 +1,20 @@
 # Change History
 
+## 2026-03-24 セキュリティラッパーを jailrun リポジトリに分離
+
+### bin/ (削除)
+- _credential-guard.sh, _agent-wrapper.sh, claude, codex, gemini, kiro-cli, kiro-cli-chat, gh-token-rotate を削除
+- セキュリティラッパー機能は https://github.com/ikeisuke/jailrun に移行
+
+### setup.sh
+- ~/bin シンボリックリンク作成を削除、jailrun インストール案内に置き換え
+
+### Brewfile
+- bats-core を追加（jailrun のテスト用）
+
+### docs/security/ (削除)
+- README.md, github-pat-setup.md を削除（jailrun リポジトリの docs/ に移行）
+
 ## 2026-03-23 Linux/WSL 対応強化
 
 ### bin/_credential-guard.sh

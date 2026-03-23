@@ -28,6 +28,9 @@ brew "go"       # Go language
 # deno: installed via official installer (~/.deno/bin), not Homebrew
 # Homebrew版はLinuxbrewのlibffi/sqlite3とzeno FFIプラグインの不整合でSEGVする
 
+# Testing
+brew "bats-core"  # Bash Automated Testing System
+
 # Utilities (optional but recommended)
 brew "ripgrep"  # Fast grep (used by fzf preview, vim plugins)
 brew "bat"      # Better cat with syntax highlighting (fzf preview)
