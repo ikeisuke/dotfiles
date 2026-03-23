@@ -124,12 +124,15 @@ DEFAULT_AWS_PROFILE="${AGENT_AWS_PROFILE:-${AWS_PROFILE:-$DEFAULT_AWS_PROFILE}}"
 # 許可リスト外のプロファイルは拒否する
 _LOAD_PROFILES="${AGENT_AWS_PROFILES:-$DEFAULT_AWS_PROFILE}"
 if [[ -n "$_LOAD_PROFILES" && -n "$ALLOWED_AWS_PROFILES" ]]; then
+  _filtered_profiles=()
   for _p in ${=_LOAD_PROFILES}; do
     if [[ " ${ALLOWED_AWS_PROFILES} " != *" $_p "* ]]; then
-      echo "[$_WRAPPER_NAME] ERROR: AWS '$_p' は許可リストにありません (ALLOWED_AWS_PROFILES)" >&2
-      exit 1
+      echo "[$_WRAPPER_NAME] WARN: AWS '$_p' は許可リストにありません (ALLOWED_AWS_PROFILES)" >&2
+    else
+      _filtered_profiles+=("$_p")
     fi
   done
+  _LOAD_PROFILES="${_filtered_profiles[*]}"
 fi
 
 # ─── 一時ディレクトリ ───────────────────────────────────
@@ -216,23 +219,21 @@ case "$(uname)" in
       _gh_token=$(secret-tool lookup service "$GH_KEYCHAIN_SERVICE" account "$USER" 2>/dev/null) || true
       [[ -n "$_gh_token" ]] && _gh_token_source="GNOME Keyring"
     fi
-    # secret-tool 未インストールまたはトークン未登録 → 既存の環境変数を継承
-    if [[ -z "$_gh_token" ]]; then
-      _gh_token="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
-      [[ -n "$_gh_token" ]] && _gh_token_source="環境変数"
+    if [[ -z "$_gh_token" ]] && ! command -v secret-tool >/dev/null 2>&1; then
+      echo "[$_WRAPPER_NAME] WARN: secret-tool 未インストール (sudo apt install libsecret-tools gnome-keyring)" >&2
     fi
     ;;
 esac
 
 if [[ -n "$_gh_token" ]]; then
-  echo "[$_WRAPPER_NAME] GitHub: Fine-grained PAT ($_gh_token_source)" >&2
+  echo "[$_WRAPPER_NAME] GitHub: PAT ($_gh_token_source)" >&2
 else
   echo "[$_WRAPPER_NAME] WARN: GitHub PAT 未設定（docs/security/github-pat-setup.md を参照）" >&2
 fi
 
 # ─── OS サンドボックス ───────────────────────────────────
 # sandbox 非内蔵ツール用に OS レベルの制限を適用
-# macOS: Seatbelt (sandbox-exec)、Linux/WSL2: bubblewrap (bwrap)
+# macOS: Seatbelt (sandbox-exec)、Linux/WSL2: systemd-run
 #
 # 読み取り拒否: 機密ディレクトリ
 # 書き込み許可: カレントディレクトリ + /tmp + ツール・シェルが使うディレクトリ（ホワイトリスト方式）
@@ -367,7 +368,7 @@ _setup_sandbox() {
       fi
       _sandbox_cmd=(
         systemd-run
-        --user --pipe --wait --collect --same-dir
+        --user --pty --wait --collect --same-dir
         # 環境変数は _env_args の env 経由で渡すため PATH のみ明示
         -E PATH="$PATH"
         # 権限昇格防止
@@ -377,7 +378,7 @@ _setup_sandbox() {
         -p RestrictSUIDSGID=yes
         -p LockPersonality=yes
         # デバイス制限
-        -p PrivateDevices=yes
+        -p PrivateDevices=no
         -p DevicePolicy=closed
         -p "DeviceAllow=/dev/null rw"
         -p "DeviceAllow=/dev/random r"
@@ -386,7 +387,8 @@ _setup_sandbox() {
         -p PrivateUsers=yes
         -p PrivateMounts=yes
         -p PrivateIPC=yes
-        -p PrivateTmp=yes
+        -p PrivateTmp=no
+        -p "ReadWritePaths=/tmp"
         # ネットワーク（API 通信に必要なため許可、ソケット種別のみ制限）
         -p PrivateNetwork=no
         -p "RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6"
@@ -454,17 +456,9 @@ _build_env_args() {
     -u AWS_ROLE_ARN
     -u AWS_ROLE_SESSION_NAME
   )
-  # GitHub トークン: セキュアストアから取得できた場合は既存を上書き
-  # 環境変数フォールバックの場合はそのまま継承（クリアしない）
-  if [[ "$_gh_token_source" == "Keychain" || "$_gh_token_source" == "GNOME Keyring" ]]; then
-    _env_args+=(-u GH_TOKEN -u GITHUB_TOKEN)
-  elif [[ -z "$_gh_token" ]]; then
-    # トークンなし: 既存もクリア（未認証で動作）
-    _env_args+=(-u GH_TOKEN -u GITHUB_TOKEN)
-  else
-    # 環境変数から継承: GITHUB_TOKEN はクリア（GH_TOKEN に統一）
-    _env_args+=(-u GITHUB_TOKEN)
-  fi
+  # GitHub トークン: セキュアストアのみ（環境変数フォールバックなし）
+  # 既存の GH_TOKEN / GITHUB_TOKEN は常にクリア
+  _env_args+=(-u GH_TOKEN -u GITHUB_TOKEN)
   # 制限済みクレデンシャルを注入（-u の後に VAR=val）
   _env_args+=(
     AWS_CONFIG_FILE="$_aws_config"
@@ -517,10 +511,25 @@ credential_guard_sandbox_exec() {
   _build_env_args
   if [[ -z "${_CREDENTIAL_GUARD_SANDBOXED:-}" ]]; then
     _setup_sandbox
-    # sandbox が実際に適用された場合のみフラグを設定（Linux で bwrap 未インストール時はスキップ）
+    # sandbox が実際に適用された場合のみフラグを設定（Linux で systemd-run 未インストール時はスキップ）
     if [[ ${#_sandbox_cmd[@]} -gt 0 ]]; then
       _env_args+=(_CREDENTIAL_GUARD_SANDBOXED=1)
     fi
+  fi
+  # Linux (systemd-run): env VAR=val は子プロセスに継承されないため -E フラグで渡す
+  if [[ ${#_sandbox_cmd[@]} -gt 0 && "${_sandbox_cmd[1]}" == "systemd-run" ]]; then
+    local _new_env_args=(env)
+    local _arg
+    for _arg in "${_env_args[@]}"; do
+      case "$_arg" in
+        env) ;;  # skip
+        -u) _new_env_args+=(-u) ;;
+        -u*) _new_env_args+=("$_arg") ;;
+        *=*) _sandbox_cmd+=(-E "$_arg") ;;
+        *) _new_env_args+=("$_arg") ;;
+      esac
+    done
+    _env_args=("${_new_env_args[@]}")
   fi
   _schedule_cleanup
   [[ "${AGENT_SANDBOX_DEBUG:-}" == "1" ]] && echo "[$_WRAPPER_NAME] exec: ${_sandbox_cmd[*]} $*" >&2

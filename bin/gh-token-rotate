@@ -1,5 +1,5 @@
 #!/bin/zsh
-# GitHub PAT のローテーション（Keychain）
+# GitHub PAT のローテーション（macOS Keychain / Linux GNOME Keyring）
 # Usage: gh-token-rotate [classic|fine-grained]
 
 set -euo pipefail
@@ -8,6 +8,48 @@ _SERVICES=(
   "classic:ai-agent-gh-token-classic"
   "fine-grained:ai-agent-gh-token-fine-grained"
 )
+
+# OS別のトークン操作ヘルパー
+_get_token() {
+  local _service="$1"
+  case "$(uname)" in
+    Darwin)
+      security find-generic-password -s "$_service" -a "$USER" -w 2>/dev/null || true
+      ;;
+    Linux)
+      if ! command -v secret-tool >/dev/null 2>&1; then
+        echo "ERROR: secret-tool 未インストール (sudo apt install libsecret-tools gnome-keyring)" >&2
+        return 1
+      fi
+      secret-tool lookup service "$_service" account "$USER" 2>/dev/null || true
+      ;;
+  esac
+}
+
+_delete_token() {
+  local _service="$1"
+  case "$(uname)" in
+    Darwin)
+      security delete-generic-password -s "$_service" -a "$USER" >/dev/null 2>&1
+      ;;
+    Linux)
+      secret-tool clear service "$_service" account "$USER" 2>/dev/null
+      ;;
+  esac
+}
+
+_store_token() {
+  local _service="$1" _token="$2"
+  case "$(uname)" in
+    Darwin)
+      security add-generic-password -s "$_service" -a "$USER" -w "$_token"
+      ;;
+    Linux)
+      # echo -n で末尾改行や制御文字の混入を防止
+      echo -n "$_token" | secret-tool store --label="GitHub PAT ($_service)" service "$_service" account "$USER"
+      ;;
+  esac
+}
 
 _check_expiration() {
   local _token="$1"
@@ -26,7 +68,7 @@ _check_expiration() {
 _rotate() {
   local _label="$1" _service="$2"
   local _current=""
-  _current=$(security find-generic-password -s "$_service" -a "$USER" -w 2>/dev/null) || true
+  _current=$(_get_token "$_service") || return
 
   if [[ -n "$_current" ]]; then
     echo "[$_label] 現在のトークン: ${_current:0:12}..."
@@ -34,7 +76,7 @@ _rotate() {
     echo -n "更新しますか？ [y/N] "
     read -r _yn
     [[ "$_yn" != [yY] ]] && echo "スキップ" && return
-    security delete-generic-password -s "$_service" -a "$USER" >/dev/null 2>&1
+    _delete_token "$_service"
   else
     echo "[$_label] トークン未登録"
   fi
@@ -48,7 +90,7 @@ _rotate() {
     return
   fi
 
-  security add-generic-password -s "$_service" -a "$USER" -w "$_token"
+  _store_token "$_service" "$_token"
   echo "[$_label] 更新完了 (${_token:0:12}...)"
 }
 

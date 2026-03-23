@@ -10,6 +10,14 @@ if grep -qi microsoft /proc/version 2>/dev/null; then
 
   # Add Windows PowerShell to PATH for notifications
   export PATH="$PATH:/mnt/c/Windows/System32/WindowsPowerShell/v1.0"
+
+  # gnome-keyring-daemon 自動起動（secret-tool / セキュリティラッパー用）
+  if command -v gnome-keyring-daemon >/dev/null 2>&1; then
+    if [[ ! -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/keyring/control" ]]; then
+      eval "$(gnome-keyring-daemon --start --components=secrets 2>/dev/null)"
+      export GNOME_KEYRING_CONTROL
+    fi
+  fi
 fi
 
 # Prompt with hostname

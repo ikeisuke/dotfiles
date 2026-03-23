@@ -112,16 +112,17 @@ systemctl --user status
 GitHub トークンは `secret-tool`（GNOME Keyring）で管理:
 
 ```bash
-sudo apt install libsecret-tools    # Ubuntu/Debian
+sudo apt install libsecret-tools gnome-keyring    # Ubuntu/Debian
 
-# トークンを保存
-secret-tool store --label="GitHub PAT for AI agents" service ai-agent-gh-token-classic account "$USER"
+# トークンを保存（echo -n でパイプし、制御文字混入を防止）
+echo -n "ghp_xxxx" | secret-tool store --label="GitHub PAT Classic" service ai-agent-gh-token-classic account "$USER"
 
-# 確認
-secret-tool lookup service ai-agent-gh-token-classic account "$USER"
+# 確認（xxd で制御文字が混入していないか確認）
+secret-tool lookup service ai-agent-gh-token-classic account "$USER" | xxd | head -1
 ```
 
-`secret-tool` 未インストールの場合は既存の `GH_TOKEN` / `GITHUB_TOKEN` 環境変数がそのまま継承される。
+`secret-tool` 未インストールの場合は GitHub PAT なしで動作する（WARN 表示）。
+環境変数フォールバックは廃止済み — セキュアストアのみをサポート。
 
 ## 使い方
 
@@ -168,6 +169,7 @@ AGENT_AWS_PROFILE  →  AWS_PROFILE  →  config の DEFAULT_AWS_PROFILE
 > **SSH→HTTPS 変換**: git の SSH URL（`git@github.com:` / `ssh://git@github.com/`）は
 > `GIT_CONFIG` env 変数で HTTPS に自動変換され、`GIT_ASKPASS` 経由で `GH_TOKEN` を使って認証する。
 > これにより SSH 鍵なしで git 操作が可能。
+> Linux (systemd-run) では環境変数が自動継承されないため、`-E` フラグで明示的に渡す。
 
 ### sandbox 検出（ネスト防止）
 

@@ -1,5 +1,35 @@
 # Change History
 
+## 2026-03-23 Linux/WSL 対応強化
+
+### bin/_credential-guard.sh
+- GitHub PAT の環境変数フォールバック削除（セキュアストアのみ）
+- secret-tool 未インストール時の WARN メッセージ追加
+- ログ表示 "Fine-grained PAT" → "PAT"（classic/fine-grained 共通）
+- systemd-run: PrivateTmp=no + ReadWritePaths=/tmp、PrivateDevices=no、--pipe → --pty（GitHub Web で適用済み）
+- systemd-run に -E フラグで環境変数を明示的に渡す（子プロセス継承問題の対策）
+
+### bin/gh-token-rotate
+- Linux 対応: _get_token / _delete_token / _store_token ヘルパーで macOS/Linux 分岐
+- echo -n でパイプして制御文字混入を防止
+- secret-tool 未インストール時のエラーメッセージ追加
+
+### zsh/os/linux.zsh
+- WSL ブロックに gnome-keyring-daemon 自動起動を追加（ソケット存在チェック付き）
+
+### setup.sh
+- Linux 推奨パッケージを bubblewrap → gnome-keyring に変更
+
+### docs/security/README.md
+- 環境変数フォールバックの記述を削除
+- gnome-keyring のインストール手順を更新
+- SSH→HTTPS 変換に Linux -E フラグの説明追記
+- secret-tool store 時の制御文字混入の注意を追加
+
+### docs/security/github-pat-setup.md
+- Linux/WSL 向け secret-tool セクションを追加（保存・確認・注意事項）
+- トークンローテーション手順を gh-token-rotate スクリプトに統一
+
 ## 2026-03-22 SSH→HTTPS 完全移行
 
 ### bin/_credential-guard.sh

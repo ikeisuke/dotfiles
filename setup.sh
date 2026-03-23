@@ -271,11 +271,11 @@ if [ -d "$DIR/bin" ]; then
   case "$(uname)" in
     Linux)
       missing=""
-      if ! command -v bwrap >/dev/null 2>&1; then
-        missing="$missing bubblewrap"
-      fi
       if ! command -v secret-tool >/dev/null 2>&1; then
         missing="$missing libsecret-tools"
+      fi
+      if ! command -v gnome-keyring-daemon >/dev/null 2>&1; then
+        missing="$missing gnome-keyring"
       fi
       if [ -n "$missing" ]; then
         echo ""
