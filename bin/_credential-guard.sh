@@ -283,8 +283,8 @@ _setup_sandbox() {
     if [[ -n "$_git_common_dir" && "$_git_common_dir" == "$_cwd"/* ]]; then
       _git_common_dir=""
     elif [[ -n "$_git_common_dir" ]]; then
-      # worktree: 親リポジトリの toplevel を取得
-      _git_parent_toplevel=$(git -C "$_git_common_dir" rev-parse --show-toplevel 2>/dev/null) || true
+      # worktree: 親リポジトリの toplevel を取得（.git の親ディレクトリ）
+      _git_parent_toplevel="${_git_common_dir%/.git}"
       # 他のワークツリーを列挙（自分自身は除外）
       local _wt_path=""
       while IFS= read -r _line; do
