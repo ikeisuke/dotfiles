@@ -6,8 +6,8 @@ _set_tab_title() {
   local tab_title="${PWD##*/}"
   [[ -z "$tab_title" ]] && tab_title="/"
 
-  # OSC 1: set tab/icon title (directory name only)
-  printf '\e]1;%s\a' "$tab_title"
+  # OSC 2: set window/tab title (directory name only)
+  printf '\e]2;%s\a' "$tab_title"
 
   # iTerm2 badge (detailed path)
   if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
@@ -28,7 +28,4 @@ _set_tab_title() {
 }
 
 autoload -Uz add-zsh-hook
-add-zsh-hook chpwd _set_tab_title
-
-# Set initial title
-_set_tab_title
+add-zsh-hook precmd _set_tab_title
