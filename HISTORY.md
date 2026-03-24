@@ -1,5 +1,15 @@
 # Change History
 
+## 2026-03-25 setup.sh 出力整理・jailrun 自動インストール
+
+### setup.sh
+- run_quiet ヘルパー追加: コマンド出力を抑制し、成功時は ✓、失敗時は ✗ + 詳細を表示
+- 全セクションにタイトル行を追加し、子要素を 2 スペースインデントで統一
+- jailrun セットアップを ghq get -u + make install で自動化（手動案内を廃止）
+- brew bundle, rustup, deno, git clone 等の verbose 出力を run_quiet で抑制
+- セクション区切りの ====== バナーを廃止
+- 関数定義（link_and_backup, check_dependency）をファイル先頭に移動
+
 ## 2026-03-24 セキュリティラッパーを jailrun リポジトリに分離
 
 ### bin/ (削除)

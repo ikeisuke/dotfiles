@@ -1,6 +1,21 @@
 #!/bin/bash
 set -e  # Exit on error
 
+# Run a command quietly; show ✓ on success, ✗ with output on failure
+run_quiet() {
+  local label="$1"
+  shift
+  local output
+  if output=$("$@" 2>&1); then
+    echo "  ✓ $label"
+  else
+    local rc=$?
+    echo "  ✗ $label"
+    echo "$output" | sed 's/^/    /'
+    return $rc
+  fi
+}
+
 # constants
 DIR="$(cd "$(dirname "$0")" && pwd)"
 STARTING_DATETIME="$(date "+%Y%m%d%H%M%S")"
@@ -15,23 +30,40 @@ case ${OSTYPE} in
     ;;
 esac
 
-# Install dependencies via Homebrew
-if [ "$MACOSX" == 1 ]; then
-  if command -v brew >/dev/null 2>&1; then
-    if [ -f "$DIR/Brewfile" ]; then
-      echo "Installing dependencies via Homebrew..."
-      brew bundle --file="$DIR/Brewfile"
-      echo "✓ Homebrew dependencies installed"
-      echo ""
+# functions
+link_and_backup() {
+  local source="$1" dist="$2"
+
+  # If destination exists and is not a symlink, back it up
+  if [ -e "$dist" ] && [ ! -L "$dist" ]; then
+    local backup_name
+    backup_name="$(echo "$dist" | sed 's|/|__|g' | sed 's|^__||')"
+    if mkdir -p "$BACKUP_DIR" && \cp -a "$dist" "$BACKUP_DIR/$backup_name"; then
+      echo "  Backing up: $dist → $BACKUP_DIR/"
+    else
+      echo "  ⚠ Failed to backup: $dist" >&2
+      return 1
     fi
-  else
-    echo "================================================"
-    echo "Warning: Homebrew not found"
-    echo "Install from: https://brew.sh"
-    echo "================================================"
-    echo ""
   fi
-fi
+
+  # Create symlink
+  local short_dist="${dist/#$HOME/~}"
+  local short_source="${source/#$DIR/<dotfiles>}"
+  if ln -sf "$source" "$dist"; then
+    echo "  ✓ Linked: $short_dist → $short_source"
+  else
+    echo "  ✗ Failed to link: $dist" >&2
+    return 1
+  fi
+}
+check_dependency() {
+  local name="$1"
+  if ! command -v "$name" >/dev/null 2>&1; then
+    echo "  ⚠ $name not found. Skipping."
+    return 1
+  fi
+  return 0
+}
 
 # Migrate legacy paths to XDG-compliant locations
 migrate_if_exists() {
@@ -45,34 +77,44 @@ migrate_if_exists() {
   fi
 }
 
-echo "Checking for legacy paths..."
+# ── Homebrew ──────────────────────────────────────────────
+if [ "$MACOSX" == 1 ]; then
+  echo "Homebrew"
+  if command -v brew >/dev/null 2>&1; then
+    if [ -f "$DIR/Brewfile" ]; then
+      run_quiet "Dependencies installed" brew bundle --file="$DIR/Brewfile"
+    fi
+  else
+    echo "  ⚠ Not found. Install from: https://brew.sh"
+  fi
+fi
+
+# ── Legacy migration ─────────────────────────────────────
+echo "Legacy migration"
 _migrated=0
 migrate_if_exists "$HOME/.cargo" "$HOME/.local/share/cargo" && _migrated=1
 migrate_if_exists "$HOME/.rustup" "$HOME/.local/share/rustup" && _migrated=1
 
 # Clean up legacy ~/.cargo remnant (empty dir or just env/ directory from old install)
 if [ -d "$HOME/.cargo" ] && [ ! -L "$HOME/.cargo" ]; then
-  # Remove if it only contains env/ directory (old rustup remnant)
   if [ -z "$(find "$HOME/.cargo" -mindepth 1 -not -path "$HOME/.cargo/env" -not -path "$HOME/.cargo/env/*" 2>/dev/null)" ]; then
     echo "  Removing legacy ~/.cargo remnant"
     rm -rf "$HOME/.cargo"
     _migrated=1
   fi
 fi
-[ "$_migrated" -eq 0 ] && echo "✓ No legacy paths to migrate"
+[ "$_migrated" -eq 0 ] && echo "  ✓ No legacy paths to migrate"
 
-# Install rustup (Rust toolchain) via official installer
+# ── rustup ────────────────────────────────────────────────
 # Homebrew版はビルド時にbrewのrustが必要で循環依存になるため公式インストーラーを使用
+echo "rustup"
 RUSTUP_HOME="${RUSTUP_HOME:-$HOME/.local/share/rustup}"
 CARGO_HOME="${CARGO_HOME:-$HOME/.local/share/cargo}"
 export RUSTUP_HOME CARGO_HOME
 if ! command -v rustup >/dev/null 2>&1 && [ ! -f "$CARGO_HOME/bin/rustup" ]; then
-  echo "Installing rustup (Rust toolchain)..."
-  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
-  echo "✓ rustup installed"
-  echo ""
+  run_quiet "Installed" sh -c "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path"
 elif [ -f "$CARGO_HOME/bin/rustup" ]; then
-  echo "✓ rustup already installed"
+  echo "  ✓ Already installed"
 fi
 
 # Ensure cargo bin is in PATH for the rest of this script
@@ -83,62 +125,23 @@ fi
 # Set default toolchain if none is active
 if command -v rustup >/dev/null 2>&1; then
   if ! rustup show active-toolchain >/dev/null 2>&1; then
-    echo "Setting default Rust toolchain..."
-    rustup default stable
-    echo "✓ Default toolchain set to stable"
+    run_quiet "Default toolchain set to stable" rustup default stable
   fi
 fi
 
-# Install deno via official installer
+# ── deno ──────────────────────────────────────────────────
 # Homebrew版はLinuxbrewのlibffi/sqlite3とzeno FFIプラグインの不整合でSEGVする
+echo "deno"
 DENO_INSTALL="${DENO_INSTALL:-$HOME/.deno}"
 export DENO_INSTALL
 if ! command -v deno >/dev/null 2>&1 && [ ! -f "$DENO_INSTALL/bin/deno" ]; then
-  echo "Installing deno..."
-  curl -fsSL https://deno.land/install.sh | sh
-  echo "✓ deno installed"
-  echo ""
+  run_quiet "Installed" sh -c "curl -fsSL https://deno.land/install.sh | sh"
 elif command -v deno >/dev/null 2>&1 || [ -f "$DENO_INSTALL/bin/deno" ]; then
-  echo "✓ deno already installed"
+  echo "  ✓ Already installed"
 fi
 
-# functions
-link_and_backup() {
-  local source="$1" dist="$2"
-
-  # If destination exists and is not a symlink, back it up
-  if [ -e "$dist" ] && [ ! -L "$dist" ]; then
-    local backup_name
-    backup_name="$(echo "$dist" | sed 's|/|__|g' | sed 's|^__||')"
-    if mkdir -p "$BACKUP_DIR" && \cp -a "$dist" "$BACKUP_DIR/$backup_name"; then
-      echo "  Backing up existing file: $dist → $BACKUP_DIR/"
-    else
-      echo "  ⚠ Failed to backup: $dist" >&2
-      return 1
-    fi
-  fi
-
-  # Create symlink
-  # Shorten paths for display
-  local short_dist="${dist/#$HOME/~}"
-  local short_source="${source/#$DIR/<dotfiles>}"
-  if ln -sf "$source" "$dist"; then
-    echo "  ✓ Linked: $short_dist → $short_source"
-  else
-    echo "  ✗ Failed to link: $dist" >&2
-    return 1
-  fi
-}
-check_dependency() {
-  local name="$1"
-  if ! command -v "$name" >/dev/null 2>&1; then
-    echo "Please install $name before running setup.sh."
-    return 1
-  fi
-  return 0
-}
-
-# .gitconfig
+# ── git ───────────────────────────────────────────────────
+echo "git"
 if check_dependency git; then
   link_and_backup "$DIR/apps/git/gitconfig" ~/.gitconfig
   mkdir -p ~/.config/git
@@ -146,10 +149,7 @@ if check_dependency git; then
 
   # Create local config if it doesn't exist
   if [ ! -e ~/.gitconfig.local ]; then
-    echo ""
-    echo "================================================"
-    echo "Git local configuration setup"
-    echo "================================================"
+    echo "  Local configuration setup:"
 
     # Get current git config values if they exist
     current_name=$(git config --global user.name 2>/dev/null || echo "")
@@ -157,18 +157,18 @@ if check_dependency git; then
 
     # Prompt for user name
     if [ -n "$current_name" ]; then
-      echo -n "Git user name [$current_name]: "
+      echo -n "  Git user name [$current_name]: "
     else
-      echo -n "Git user name: "
+      echo -n "  Git user name: "
     fi
     read -r input_name
     username=${input_name:-$current_name}
 
     # Prompt for user email
     if [ -n "$current_email" ]; then
-      echo -n "Git user email [$current_email]: "
+      echo -n "  Git user email [$current_email]: "
     else
-      echo -n "Git user email: "
+      echo -n "  Git user email: "
     fi
     read -r input_email
     useremail=${input_email:-$current_email}
@@ -185,45 +185,36 @@ if check_dependency git; then
 
 # For directory-specific overrides, see ~/.gitconfig.local.example
 EOF
-      echo ""
-      echo "✓ Created ~/.gitconfig.local"
-      echo ""
-      echo "For directory-specific settings (work/personal overrides),"
-      echo "see examples in ~/.gitconfig.local.example"
-      echo ""
+      echo "  ✓ Created ~/.gitconfig.local"
+      echo "    → For directory-specific settings, see ~/.gitconfig.local.example"
     else
-      echo ""
-      echo "⚠ Skipped creating ~/.gitconfig.local (name or email not provided)"
-      echo "You can create it manually later by copying ~/.gitconfig.local.example"
-      echo ""
+      echo "  ⚠ Skipped creating ~/.gitconfig.local (name or email not provided)"
     fi
   fi
 fi
 
-# jj (jujutsu) configuration
+# ── jj (jujutsu) ─────────────────────────────────────────
 if command -v jj >/dev/null 2>&1; then
+  echo "jj"
   # Get user info from git config if available (without --global to respect includes)
   jj_name=$(git config user.name 2>/dev/null || echo "")
   jj_email=$(git config user.email 2>/dev/null || echo "")
 
   if [ -n "$jj_name" ] && [ -n "$jj_email" ]; then
-    echo "Configuring jj (jujutsu) with git user info..."
-    jj config set --user user.name "$jj_name"
-    jj config set --user user.email "$jj_email"
-    echo "✓ jj configured (from git config)"
+    run_quiet "Configured (from git config)" sh -c "jj config set --user user.name '$jj_name' && jj config set --user user.email '$jj_email'"
   else
-    echo "⚠ Skipping jj configuration (git user.name/email not set)"
+    echo "  ⚠ Skipping (git user.name/email not set)"
   fi
 fi
 
-# .zshrc
+# ── zsh ───────────────────────────────────────────────────
+echo "zsh"
 if check_dependency zsh; then
   link_and_backup "$DIR/zsh/zshenv" ~/.zshenv
   link_and_backup "$DIR/zsh/zprofile" ~/.zprofile
   link_and_backup "$DIR/zsh/zshrc" ~/.zshrc
 
   # Compile zsh files for faster startup (non-critical, don't abort on failure)
-  echo "Compiling zsh files for faster startup..."
   if zsh -c "
     mkdir -p ~/.cache/zsh
     zcompile ~/.zshenv
@@ -233,22 +224,22 @@ if check_dependency zsh; then
       zcompile \"\$file\"
     done
   " 2>/dev/null; then
-    echo "✓ Zsh files compiled"
+    echo "  ✓ Zsh files compiled"
   else
-    echo "⚠ Warning: some zsh files failed to compile (non-critical)"
+    echo "  ⚠ Some files failed to compile (non-critical)"
   fi
 fi
 
-# tmux (XDG: ~/.config/tmux/)
+# ── tmux ──────────────────────────────────────────────────
+echo "tmux"
 if check_dependency tmux; then
   mkdir -p ~/.config/tmux
   link_and_backup "$DIR/apps/tmux/tmux.conf" ~/.config/tmux/tmux.conf
 
   # Install TPM if not already installed
   if [ ! -d ~/.config/tmux/plugins/tpm ]; then
-    echo "Installing TPM (Tmux Plugin Manager)..."
-    git clone https://github.com/tmux-plugins/tpm ~/.config/tmux/plugins/tpm
-    echo "  → Install tmux plugins: start tmux, then press Ctrl+z I"
+    run_quiet "TPM installed" git clone https://github.com/tmux-plugins/tpm ~/.config/tmux/plugins/tpm
+    echo "  → Run: tmux, then Ctrl+z I to install plugins"
   fi
 
   # Clean up legacy ~/.tmux.conf symlink
@@ -258,20 +249,11 @@ if check_dependency tmux; then
   fi
 fi
 
-# jailrun (AI agent security wrapper)
-echo ""
-echo "================================================"
-echo "jailrun setup"
-echo "================================================"
-if command -v jailrun >/dev/null 2>&1; then
-  echo "✓ jailrun already installed ($(command -v jailrun))"
+# ── jailrun ───────────────────────────────────────────────
+echo "jailrun"
+if ! command -v ghq >/dev/null 2>&1; then
+  echo "  ✗ ghq not found. Run 'brew bundle' first."
 else
-  echo "jailrun is not installed."
-  echo "  Install from: https://github.com/ikeisuke/jailrun"
-  echo "    git clone https://github.com/ikeisuke/jailrun.git"
-  echo "    cd jailrun && make install"
-  echo ""
-
   # Linux: 依存パッケージを案内
   case "$(uname)" in
     Linux)
@@ -283,15 +265,18 @@ else
         missing="$missing gnome-keyring"
       fi
       if [ -n "$missing" ]; then
-        echo "  [jailrun] Linux 推奨パッケージが未インストールです:"
+        echo "  ⚠ Linux 推奨パッケージが未インストールです:"
         echo "    sudo apt install$missing"
       fi
       ;;
   esac
+  run_quiet "Fetched" ghq get -u ikeisuke/jailrun
+  run_quiet "Installed" make -C "$(ghq root)/github.com/ikeisuke/jailrun" install
 fi
 
-# Claude Code
+# ── Claude Code ───────────────────────────────────────────
 if [ -d "$DIR/apps/claude" ]; then
+  echo "Claude Code"
   mkdir -p ~/.claude
   link_and_backup "$DIR/apps/claude/CLAUDE.md" ~/.claude/CLAUDE.md
   link_and_backup "$DIR/apps/claude/settings.json" ~/.claude/settings.json
@@ -302,44 +287,46 @@ if [ -d "$DIR/apps/claude" ]; then
   # Install/update plugins
   if command -v claude >/dev/null 2>&1; then
     if claude plugins list 2>/dev/null | grep -q 'ikeisuke-skills'; then
-      echo "  Updating claude-skills plugin..."
-      claude plugins update tools@ikeisuke-skills 2>/dev/null || true
+      run_quiet "Plugins updated" claude plugins update tools@ikeisuke-skills
     else
-      echo "  Installing claude-skills plugin..."
       claude plugins marketplace add \
         https://raw.githubusercontent.com/ikeisuke/claude-skills/main/.claude-plugin/marketplace.json 2>/dev/null || true
-      claude plugins install tools@ikeisuke-skills 2>/dev/null || true
+      run_quiet "Plugins installed" claude plugins install tools@ikeisuke-skills
     fi
-    echo "  ✓ Claude Code plugins configured"
   fi
 fi
 
-# GitHub CLI
+# ── GitHub CLI ────────────────────────────────────────────
 if [ -d "$DIR/apps/gh" ]; then
+  echo "GitHub CLI"
   mkdir -p ~/.config/gh
   link_and_backup "$DIR/apps/gh/config.yml" ~/.config/gh/config.yml
 fi
 
-# zeno.zsh
+# ── zeno.zsh ──────────────────────────────────────────────
 if [ -d "$DIR/apps/zeno" ]; then
+  echo "zeno"
   mkdir -p ~/.config/zeno
   link_and_backup "$DIR/apps/zeno/config.yml" ~/.config/zeno/config.yml
 fi
 
-# fzf
+# ── fzf ───────────────────────────────────────────────────
 if [ -d "$DIR/apps/fzf" ]; then
+  echo "fzf"
   mkdir -p ~/.config/fzf
   link_and_backup "$DIR/apps/fzf/fzfrc" ~/.config/fzf/fzfrc
 fi
 
-# Ghostty
+# ── Ghostty ───────────────────────────────────────────────
 if [ -d "$DIR/apps/ghostty" ]; then
+  echo "Ghostty"
   mkdir -p ~/.config/ghostty
   link_and_backup "$DIR/apps/ghostty/config" ~/.config/ghostty/config
 fi
 
-# .vimrc
+# ── vim ───────────────────────────────────────────────────
+echo "vim"
 if check_dependency vim; then
   link_and_backup "$DIR/apps/vim/vimrc" ~/.vimrc
-  echo "Vim configuration linked. Run 'vim +PlugInstall +qall' to install plugins."
+  echo "  → Run 'vim +PlugInstall +qall' to install plugins"
 fi
