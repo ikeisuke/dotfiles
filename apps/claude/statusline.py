@@ -63,7 +63,7 @@ def fmt(label, pct, resets_at=None):
 SEP = f" {DIM}│{R} "
 model = data.get("model", {}).get("display_name", "Claude")
 
-# Line 1: model │ cost │ duration │ +lines -lines
+# Line 1: model │ cost │ duration │ +lines -lines │ time
 line1 = [model]
 cost_data = data.get("cost", {})
 cost = cost_data.get("total_cost_usd") or 0
@@ -79,6 +79,7 @@ else:
 added = cost_data.get("total_lines_added") or 0
 removed = cost_data.get("total_lines_removed") or 0
 line1.append(f"\033[38;2;80;200;80m+{added}{R} \033[38;2;255;100;80m-{removed}{R}")
+line1.append(f"{DIM}{time.strftime('%Y/%m/%d %H:%M:%S')}{R}")
 
 # Line 2: ctx (threshold bar + full bar) │ 5h │ 7d
 line2 = []
