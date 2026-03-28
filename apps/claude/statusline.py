@@ -2,6 +2,7 @@
 """Braille dots statusline - dotted progress bar using braille characters."""
 import json
 import os
+import subprocess
 import sys
 import time
 
@@ -63,8 +64,31 @@ def fmt(label, pct, resets_at=None):
 SEP = f" {DIM}│{R} "
 model = data.get("model", {}).get("display_name", "Claude")
 
-# Line 1: model │ cost │ duration │ +lines -lines │ time
-line1 = [model]
+# Git repo name and branch
+def git_info():
+    try:
+        top = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            capture_output=True, text=True, timeout=2,
+        )
+        branch = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            capture_output=True, text=True, timeout=2,
+        )
+        if top.returncode == 0 and branch.returncode == 0:
+            repo = os.path.basename(top.stdout.strip())
+            return f"{repo} {DIM}/{R} {branch.stdout.strip()}"
+    except Exception:
+        pass
+    return None
+
+
+# Line 1: repo/branch │ model │ cost │ duration │ +lines -lines │ time
+line1 = []
+gi = git_info()
+if gi:
+    line1.append(gi)
+line1.append(model)
 cost_data = data.get("cost", {})
 cost = cost_data.get("total_cost_usd") or 0
 line1.append(f"${float(cost):.2f}")
