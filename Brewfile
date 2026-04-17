@@ -76,7 +76,6 @@ if OS.mac?
   cask "claude"         # Anthropic Claude desktop app
   cask "chatgpt"        # OpenAI ChatGPT desktop app
   cask "chatgpt-atlas"  # OpenAI ChatGPT Atlas (research preview)
-  cask "claude-code"    # Anthropic Claude Code CLI
   cask "kiro-cli"          # Kiro CLI (Amazon)
   cask "agent-sessions"    # Agent Sessions
 

@@ -6,7 +6,8 @@
     "CLAUDE_CODE_DISABLE_FAST_MODE": "1",
     "CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY": "1",
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
-    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "20"
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "40",
+    "CLAUDE_CODE_NO_FLICKER": "1"
   },
   "attribution": {
     "commit": "",
@@ -25,9 +26,8 @@
       "Write(/**)",
       "Write(///tmp/**)",
       "Bash([ *)",
-      "Bash(\\rm /tmp/aidlc-*)",
+      "Bash(rm /tmp/aidlc-*)",
       "Bash(bash -n *)",
-      "Bash(bash /Users/keisuke/.claude/plugins/cache/ikeisuke-skills/tools/*/skills/session-title/bin/session-title.sh *)",
       "Bash(cat:*)",
       "Bash(cat > /tmp/*)",
       "Bash(codex *)",
@@ -122,9 +122,6 @@
     ],
     "defaultMode": "auto"
   },
-  "sandbox": {
-    "enabled": false
-  },
   "enabledMcpjsonServers": [],
   "hooks": {
     "PreToolUse": [
@@ -132,7 +129,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if [ -r ~/.aws/config ]; then echo 'sandbox未適用です。~/bin/claude から起動し直してください' >&2; exit 2; fi"
+            "command": "if [ -r ~/.aws/config ]; then echo 'sandbox未適用です。~/bin/claude から起動し直してください' >&2; exit 0; fi"
           }
         ]
       }
@@ -142,18 +139,24 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.claude/plugins/marketplaces/ikeisuke-skills/skills/session-title/bin/session-title.sh \"$(basename \"$(git rev-parse --show-toplevel 2>/dev/null)\" 2>/dev/null)\" \"$(git branch --show-current 2>/dev/null)\""
+            "command": "if [ \"$(uname -s)\" != Darwin ]; then exit 0; fi; REPO=$(basename \"$(git rev-parse --show-toplevel 2>/dev/null)\" 2>/dev/null); BRANCH=$(git branch --show-current 2>/dev/null); TITLE=\"${REPO:-unknown}\"; [ -n \"$BRANCH\" ] && TITLE=\"$TITLE / $BRANCH\"; get_tty() { local p=$$; while [ \"$p\" -gt 1 ]; do local t=$(ps -p \"$p\" -o tty= 2>/dev/null | tr -d ' '); if [ -n \"$t\" ] && [ \"$t\" != '??' ]; then echo \"/dev/$t\"; return; fi; p=$(ps -p \"$p\" -o ppid= 2>/dev/null | tr -d ' '); [ -z \"$p\" ] && break; done; }; TTY=$(get_tty); if [ -n \"$TTY\" ] && [ -w \"$TTY\" ]; then printf '\\033]0;%s\\007' \"$TITLE\" > \"$TTY\" 2>/dev/null; if [ \"${TERM_PROGRAM:-}\" = 'iTerm.app' ]; then BADGE=$(printf '%s\\n%s' \"$REPO\" \"$BRANCH\" | base64 | tr -d '\\r\\n'); printf '\\033]1337;SetBadgeFormat=%s\\007' \"$BADGE\" > \"$TTY\" 2>/dev/null; fi; fi; exit 0"
           }
         ]
       }
     ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline.py"
   },
   "enabledPlugins": {
     "swift-lsp@claude-plugins-official": false,
     "document-skills@anthropic-agent-skills": false,
     "example-skills@anthropic-agent-skills": true,
     "tools@ikeisuke-skills": true,
-    "rust-analyzer-lsp@claude-plugins-official": true
+    "rust-analyzer-lsp@claude-plugins-official": true,
+    "aidlc@ai-dlc-starter-kit": true,
+    "codex@openai-codex": true
   },
   "extraKnownMarketplaces": {
     "ikeisuke-skills": {
@@ -162,12 +165,26 @@
         "repo": "ikeisuke/claude-skills"
       },
       "autoUpdate": true
+    },
+    "ai-dlc-starter-kit": {
+      "source": {
+        "source": "github",
+        "repo": "ikeisuke/ai-dlc-starter-kit"
+      }
+    },
+    "openai-codex": {
+      "source": {
+        "source": "github",
+        "repo": "openai/codex-plugin-cc"
+      }
     }
   },
-  "voiceEnabled": true,
+  "language": "日本語",
+  "sandbox": {
+    "enabled": false
+  },
+  "effortLevel": "high",
   "autoMemoryEnabled": false,
-  "statusLine": {
-    "type": "command",
-    "command": "~/.claude/statusline.py"
-  }
+  "skipDangerousModePermissionPrompt": true,
+  "voiceEnabled": true
 }

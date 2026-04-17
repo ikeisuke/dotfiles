@@ -1,5 +1,42 @@
 # Change History
 
+## 2026-04-17 Claude Code 周りの設定整備と npm 移行
+
+### Brewfile
+- `cask "claude-code"` を削除（Homebrew cask 経由のインストールを廃止）
+
+### setup.sh
+- Claude Code を npm 経由でインストール/更新（`npm install -g @anthropic-ai/claude-code`）
+  - Homebrew より公式 npm パッケージの方が最新版の配信が早いため移行
+- プラグインインストールで `--scope user` を明示（project scope と混在して update が失敗する問題を解消）
+- update を先に試行し、失敗時のみ marketplace 追加 + install するフォールバック方式に変更
+- 新設 `bin/` を `~/.local/bin` へリンクするセクションを追加
+
+### apps/claude/CLAUDE.md
+- Codex CLI 連携の詳細化（`codex exec` の使い方、出力は Codex にて検証される旨）
+- 設定ファイルのスコープ（user / project）説明を追加
+- スキル優先呼び出しルールを追加
+- 許可ルールの定期メンテナンス方針（`tools:suggest-permissions`）を追加
+- セッションタイトル自動設定を hooks 直接実行へ更新
+- トレードオフスライダー（スコープ/予算/納期/品質）を追加
+- 「改善の約束は行動で示す」ルールを追加（宣言文を禁止し CLAUDE.md 追記 / Issue / 直接修正のいずれかを求める）
+
+### apps/claude/settings.json
+- env: `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` を 20→40、`CLAUDE_CODE_NO_FLICKER=1` を追加
+- 有効プラグインに `aidlc@ai-dlc-starter-kit` と `codex@openai-codex` を追加（marketplace 登録含む）
+- SessionStart hook を session-title スキル呼び出しから inline シェルへ変更
+  - macOS 限定、OSC 0 でタイトル更新、iTerm2 は Badge もあわせて設定
+- PreToolUse hook: sandbox 未適用検出時の `exit 2` を `exit 0` に変更（警告のみで継続）
+- 設定追加: `language=日本語`、`effortLevel=high`、`skipDangerousModePermissionPrompt=true`
+- permissions: `Bash(\\rm ...)` → `Bash(rm ...)` に修正、不要な session-title.sh 許可を削除
+
+### bin/gh-ruleset (新規)
+- GitHub ブランチルールセット（削除・force push 保護等）を apply/show/remove する補助スクリプト
+- `gh api` ベースで `--check`（必須ステータスチェック）や `--bypass`（バイパスアクター）を指定可能
+
+### apps/git/gitignore
+- `settings.local.json`、`__pycache__`、`.DS_Store` を無視対象に追加
+
 ## 2026-03-25 setup.sh 出力整理・jailrun 自動インストール
 
 ### setup.sh

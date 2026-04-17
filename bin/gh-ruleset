@@ -1,0 +1,196 @@
+#!/bin/bash
+set -eo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: gh-ruleset <command> <owner/repo> [options]
+
+Commands:
+  apply    Apply default branch ruleset (deletion + force push protection)
+  show     Show current rulesets
+  remove   Remove a ruleset by ID
+
+Options:
+  --check <name>   Add required status check (repeatable)
+  --bypass <actor>  Add bypass actor (e.g. "org_admin", "repo_admin")
+
+Examples:
+  gh-ruleset apply ikeisuke/dotfiles
+  gh-ruleset apply ikeisuke/myapp --check lint --check test
+  gh-ruleset show ikeisuke/dotfiles
+  gh-ruleset remove ikeisuke/dotfiles 12345
+EOF
+  exit 1
+}
+
+cmd_show() {
+  local repo="$1"
+  local ids
+  ids=$(gh api "repos/$repo/rulesets" --jq '.[].id' 2>&1) || {
+    echo "No rulesets found for $repo"
+    return 0
+  }
+
+  if [ -z "$ids" ]; then
+    echo "No rulesets found for $repo"
+    return 0
+  fi
+
+  for id in $ids; do
+    local detail
+    detail=$(gh api "repos/$repo/rulesets/$id" 2>&1) || continue
+    echo "$detail" | python3 -c "
+import json, sys
+r = json.load(sys.stdin)
+print(f\"[{r['id']}] {r['name']} ({r['enforcement']})\")
+print(f\"  target: {r['target']}\")
+conds = r.get('conditions', {}).get('ref_name', {})
+inc = ', '.join(conds.get('include', []))
+print(f\"  branches: {inc}\")
+for rule in r.get('rules', []):
+    t = rule['type']
+    params = rule.get('parameters', {})
+    if t == 'required_status_checks':
+        checks = [c['context'] for c in params.get('required_status_checks', [])]
+        print(f\"  - {t}: {', '.join(checks)}\")
+    else:
+        print(f\"  - {t}\")
+bypass = r.get('bypass_actors', [])
+if bypass:
+    for b in bypass:
+        print(f\"  bypass: {b.get('actor_type', '')} (mode: {b.get('bypass_mode', '')})\")
+else:
+    print('  bypass: none')
+"
+  done
+}
+
+cmd_apply() {
+  local repo="$1"
+  shift
+  local checks=()
+  local bypass_actors=()
+
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --check)
+        [ $# -ge 2 ] || { echo "Error: --check requires a value" >&2; exit 1; }
+        checks+=("$2")
+        shift 2
+        ;;
+      --bypass)
+        [ $# -ge 2 ] || { echo "Error: --bypass requires a value" >&2; exit 1; }
+        bypass_actors+=("$2")
+        shift 2
+        ;;
+      *)
+        echo "Unknown option: $1" >&2
+        exit 1
+        ;;
+    esac
+  done
+
+  # Build JSON body via Python
+  local py_args=()
+  for c in "${checks[@]}"; do
+    py_args+=(--check "$c")
+  done
+  for actor in "${bypass_actors[@]}"; do
+    py_args+=(--bypass "$actor")
+  done
+
+  local body
+  body=$(python3 - "${py_args[@]}" <<'PYEOF'
+import json, sys
+
+checks = []
+bypass_actors = []
+args = sys.argv[1:]
+i = 0
+while i < len(args):
+    if args[i] == "--check" and i + 1 < len(args):
+        checks.append(args[i + 1])
+        i += 2
+    elif args[i] == "--bypass" and i + 1 < len(args):
+        bypass_actors.append(args[i + 1])
+        i += 2
+    else:
+        i += 1
+
+rules = [{"type": "deletion"}, {"type": "non_fast_forward"}]
+if checks:
+    rules.append({
+        "type": "required_status_checks",
+        "parameters": {
+            "strict_required_status_checks_policy": False,
+            "do_not_enforce_on_create": True,
+            "required_status_checks": [{"context": c} for c in checks],
+        },
+    })
+
+actor_map = {
+    "org_admin": {"actor_type": "OrganizationAdmin", "actor_id": 1, "bypass_mode": "always"},
+    "repo_admin": {"actor_type": "RepositoryRole", "actor_id": 5, "bypass_mode": "always"},
+}
+bypass = []
+for a in bypass_actors:
+    if a in actor_map:
+        bypass.append(actor_map[a])
+    else:
+        print(f"Unknown bypass actor: {a}", file=sys.stderr)
+        sys.exit(1)
+
+print(json.dumps({
+    "name": "main",
+    "target": "branch",
+    "enforcement": "active",
+    "conditions": {"ref_name": {"include": ["~DEFAULT_BRANCH"], "exclude": []}},
+    "rules": rules,
+    "bypass_actors": bypass,
+}))
+PYEOF
+  )
+
+  local result
+  result=$(echo "$body" | gh api "repos/$repo/rulesets" --input - 2>&1) || {
+    echo "Failed to create ruleset for $repo:" >&2
+    echo "$result" >&2
+    return 1
+  }
+
+  local ruleset_id
+  ruleset_id=$(echo "$result" | python3 -c "import json,sys; print(json.load(sys.stdin)['id'])")
+  echo "✓ Ruleset created for $repo (id: $ruleset_id)"
+  echo "  - deletion protection"
+  echo "  - force push protection"
+  for c in "${checks[@]}"; do
+    echo "  - required check: $c"
+  done
+}
+
+cmd_remove() {
+  local repo="$1"
+  local ruleset_id="$2"
+
+  gh api -X DELETE "repos/$repo/rulesets/$ruleset_id" 2>&1 || {
+    echo "Failed to remove ruleset $ruleset_id from $repo" >&2
+    return 1
+  }
+  echo "✓ Ruleset $ruleset_id removed from $repo"
+}
+
+# Main
+[ $# -ge 2 ] || usage
+command="$1"
+repo="$2"
+shift 2
+
+case "$command" in
+  apply)  cmd_apply "$repo" "$@" ;;
+  show)   cmd_show "$repo" ;;
+  remove)
+    [ $# -ge 1 ] || { echo "Error: remove requires a ruleset ID" >&2; exit 1; }
+    cmd_remove "$repo" "$1"
+    ;;
+  *)      usage ;;
+esac

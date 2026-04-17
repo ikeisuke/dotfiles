@@ -249,6 +249,15 @@ if check_dependency tmux; then
   fi
 fi
 
+# ── bin ───────────────────────────────────────────────────
+if [ -d "$DIR/bin" ]; then
+  echo "bin"
+  mkdir -p ~/.local/bin
+  for f in "$DIR/bin/"*; do
+    link_and_backup "$f" ~/.local/bin/"$(basename "$f")"
+  done
+fi
+
 # ── jailrun ───────────────────────────────────────────────
 echo "jailrun"
 if ! command -v ghq >/dev/null 2>&1; then
@@ -284,14 +293,19 @@ if [ -d "$DIR/apps/claude" ]; then
   link_and_backup "$DIR/apps/claude/statusline.py" ~/.claude/statusline.py
   chmod +x ~/.claude/statusline.py
 
-  # Install/update plugins
+  # Install/update Claude Code via npm (official method)
+  if command -v npm >/dev/null 2>&1; then
+    run_quiet "Claude Code installed/updated" npm install -g @anthropic-ai/claude-code
+  fi
+
+  # Install/update plugins at user scope
   if command -v claude >/dev/null 2>&1; then
-    if claude plugins list 2>/dev/null | grep -q 'ikeisuke-skills'; then
-      run_quiet "Plugins updated" claude plugins update tools@ikeisuke-skills
+    if claude plugins update tools@ikeisuke-skills >/dev/null 2>&1; then
+      echo "  ✓ Plugins updated"
     else
       claude plugins marketplace add \
         https://raw.githubusercontent.com/ikeisuke/claude-skills/main/.claude-plugin/marketplace.json 2>/dev/null || true
-      run_quiet "Plugins installed" claude plugins install tools@ikeisuke-skills
+      run_quiet "Plugins installed" claude plugins install --scope user tools@ikeisuke-skills
     fi
   fi
 fi
