@@ -23,3 +23,15 @@
 - macOS / Linux 両対応（`os/darwin.zsh`, `os/linux.zsh` で分岐）
 - マシン固有の設定は git 管理外（`~/.gitconfig.local`, `~/.zshrc.local`）
 - XDG Base Directory 準拠で `$HOME` を汚さない
+
+## WSL2 AppArmor 有効化
+
+jailrun のサンドボックスが AppArmor を一次プロファイルとして利用するため、
+WSL2 環境では dotfiles 側で `.wslconfig` の `kernelCommandLine` に
+`apparmor=1 security=apparmor` を追加する責務を持つ。
+
+- `setup.sh` が WSL2 を検出すると `/mnt/c/Users/<USERNAME>/.wslconfig` をマージ（冪等）
+- 既存の `kernelCommandLine` は保持し、不足パラメータのみ追記
+- 変更時は `.bak.<timestamp>` バックアップを残す
+- 適用には Windows 側で `wsl --shutdown` が必要
+- userspace ツール未導入時は `sudo apt install apparmor apparmor-utils` を案内

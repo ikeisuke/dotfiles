@@ -258,6 +258,112 @@ if [ -d "$DIR/bin" ]; then
   done
 fi
 
+# ── WSL2 AppArmor ─────────────────────────────────────────
+# jailrun のサンドボックスが AppArmor を一次プロファイルとして使うため、
+# WSL2 側 .wslconfig に有効化パラメータをマージする。
+# .wslconfig は WSL2 専用なので WSL1 は除外（kernel release/proc version の "WSL2" で判定）
+if [ "$LINUX" = 1 ] && { uname -r 2>/dev/null | grep -qi WSL2 || grep -qi WSL2 /proc/version 2>/dev/null; }; then
+  echo "WSL2 AppArmor"
+
+  # Windows ユーザー名は cmd.exe interop 経由でのみ確定的に取得できる。
+  # /mnt/c/Users の走査は複数アカウント環境で誤判定するため行わない。
+  win_user=""
+  if [ -x /mnt/c/Windows/System32/cmd.exe ]; then
+    win_user=$(cd /mnt/c && /mnt/c/Windows/System32/cmd.exe /c "echo %USERNAME%" 2>/dev/null | tr -d '\r\n')
+  fi
+
+  if [ -z "$win_user" ]; then
+    echo "  ⚠ Windows username not detected (cmd.exe interop unavailable). Skipping .wslconfig setup."
+    echo "    → Manual: add 'apparmor=1 security=apparmor' to kernelCommandLine in C:\\Users\\<you>\\.wslconfig"
+  else
+    wslconfig="/mnt/c/Users/$win_user/.wslconfig"
+    required_params="apparmor=1 security=apparmor"
+
+    before_sum=""
+    [ -f "$wslconfig" ] && before_sum=$(md5sum "$wslconfig" | awk '{print $1}')
+
+    if [ ! -f "$wslconfig" ]; then
+      cat > "$wslconfig" <<EOF
+[wsl2]
+kernelCommandLine = $required_params
+EOF
+      echo "  ✓ Created: $wslconfig"
+      echo "    → Run 'wsl --shutdown' from Windows to apply"
+    else
+      tmp="${wslconfig}.tmp.$$"
+      backup="${wslconfig}.bak.$STARTING_DATETIME"
+      \cp "$wslconfig" "$backup"
+      # INI のセクション名 / キー名は大小文字を区別しないので tolower で比較する
+      awk -v required="$required_params" '
+        BEGIN { section=""; wsl2_found=0; kcl_found=0 }
+        /^\[.*\]/ {
+          if (section == "wsl2" && !kcl_found) {
+            print "kernelCommandLine = " required
+            kcl_found = 1
+          }
+          section = tolower(substr($0, 2, length($0) - 2))
+          if (section == "wsl2") wsl2_found = 1
+          print
+          next
+        }
+        section == "wsl2" && tolower($0) ~ /^[[:space:]]*kernelcommandline[[:space:]]*=/ {
+          kcl_found = 1
+          val = $0
+          sub(/^[^=]*=[[:space:]]*/, "", val)
+          n = split(required, req_arr, " ")
+          for (i=1; i<=n; i++) {
+            if (index(" " val " ", " " req_arr[i] " ") == 0) {
+              val = val " " req_arr[i]
+            }
+          }
+          sub(/^[[:space:]]+/, "", val)
+          print "kernelCommandLine = " val
+          next
+        }
+        { print }
+        END {
+          if (!wsl2_found) {
+            print "[wsl2]"
+            print "kernelCommandLine = " required
+          } else if (!kcl_found) {
+            print "kernelCommandLine = " required
+          }
+        }
+      ' "$wslconfig" > "$tmp" && \mv "$tmp" "$wslconfig"
+
+      after_sum=$(md5sum "$wslconfig" | awk '{print $1}')
+      if [ "$before_sum" = "$after_sum" ]; then
+        echo "  ✓ Already configured: $wslconfig"
+        \rm -f "$backup"
+      else
+        echo "  ✓ Updated: $wslconfig"
+        echo "    → Backup: $backup"
+        echo "    → Run 'wsl --shutdown' from Windows to apply"
+      fi
+    fi
+
+    # Runtime status
+    if [ -r /sys/module/apparmor/parameters/enabled ]; then
+      enabled=$(cat /sys/module/apparmor/parameters/enabled)
+      case "$enabled" in
+        Y) echo "  ✓ AppArmor enabled (kernel)" ;;
+        *) echo "  ⚠ AppArmor disabled (kernel). Run 'wsl --shutdown' from Windows." ;;
+      esac
+    else
+      echo "  ⚠ AppArmor kernel module not loaded. Run 'wsl --shutdown' from Windows."
+    fi
+
+    # Userspace tools
+    missing=""
+    command -v apparmor_parser >/dev/null 2>&1 || missing="$missing apparmor"
+    command -v aa-status >/dev/null 2>&1 || missing="$missing apparmor-utils"
+    if [ -n "$missing" ]; then
+      echo "  ⚠ Missing packages:"
+      echo "    sudo apt install$missing"
+    fi
+  fi
+fi
+
 # ── jailrun ───────────────────────────────────────────────
 echo "jailrun"
 if ! command -v ghq >/dev/null 2>&1; then

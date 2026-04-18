@@ -1,5 +1,19 @@
 # Change History
 
+## 2026-04-19 WSL2 AppArmor 有効化サポート
+
+### setup.sh
+- WSL2 環境を検出し、Windows 側 `.wslconfig` に AppArmor 有効化パラメータをマージするセクションを追加
+  - `uname -r` / `/proc/version` に `WSL2` が含まれる場合のみ有効化（`.wslconfig` は WSL2 専用のため WSL1 は除外）
+  - `/mnt/c/Users/<USERNAME>/.wslconfig` の `[wsl2]` セクションの `kernelCommandLine` に `apparmor=1 security=apparmor` を追記
+  - 既存設定は保持したまま不足パラメータのみ追加（冪等）、変更時は `.bak.<timestamp>` を残す
+  - Windows ユーザー名は `cmd.exe /c echo %USERNAME%` で interop 経由で取得、取得できない場合は警告のみ出して中断（複数アカウント環境で誤った profile を書き換えるのを避けるため `/mnt/c/Users` の走査はしない）
+  - AppArmor ランタイム状態（`/sys/module/apparmor/parameters/enabled`）と userspace ツール（`apparmor_parser`, `aa-status`）の有無を確認
+- なぜ: jailrun が AppArmor をサンドボックスの一次プロファイルとして使う構成に移行するため、dotfiles 側で有効化条件を整える
+
+### AGENTS.md
+- 「WSL2 AppArmor 有効化」セクションを追加し、dotfiles 側の責務と適用手順（`wsl --shutdown`、apparmor パッケージ）を明記
+
 ## 2026-04-17 Claude Code 周りの設定整備と npm 移行
 
 ### Brewfile
