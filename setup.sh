@@ -450,3 +450,34 @@ if check_dependency vim; then
   link_and_backup "$DIR/apps/vim/vimrc" ~/.vimrc
   echo "  → Run 'vim +PlugInstall +qall' to install plugins"
 fi
+
+# ── Installed versions ────────────────────────────────────
+# Print each tool's first-line version output, or "(not installed)" if missing
+print_version() {
+  local name="$1" version_cmd="$2"
+  if ! command -v "$name" >/dev/null 2>&1; then
+    printf "  %-8s  (not installed)\n" "$name"
+    return
+  fi
+  local version
+  version=$(eval "$version_cmd" 2>&1 | head -n 1)
+  printf "  %-8s  %s\n" "$name" "$version"
+}
+
+echo "Installed versions"
+[ "$MACOSX" = 1 ] && print_version brew "brew --version"
+print_version rustup  "rustup --version"
+print_version rustc   "rustc --version"
+print_version cargo   "cargo --version"
+print_version deno    "deno --version"
+print_version git     "git --version"
+print_version jj      "jj --version"
+print_version zsh     "zsh --version"
+print_version tmux    "tmux -V"
+print_version node    "node --version"
+print_version npm     "npm --version"
+print_version claude  "claude --version"
+print_version jailrun "jailrun --version"
+print_version gh      "gh --version"
+print_version ghq     "ghq --version"
+print_version vim     "vim --version"

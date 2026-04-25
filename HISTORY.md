@@ -36,6 +36,15 @@
 - 出力フォーマットは `setup.sh` の `✓` / `✗` / `⚠` と統一、`tput` で 8色端末のみカラー化
 - なぜ: `setup.sh` 実行後に Brewfile を更新したり手動でファイルを上書きしたりした際の環境ドリフトを `./bin/doctor` 一発で検知できるようにするため
 
+## 2026-04-24 setup.sh にバージョン表示セクションを追加
+
+### setup.sh
+- 末尾に「Installed versions」セクションを追加し、主要ツール（brew / rustup / rustc / cargo / deno / git / jj / zsh / tmux / node / npm / claude / jailrun / gh / ghq / vim）のバージョンを一覧表示
+  - `print_version` ヘルパーで各ツールの先頭行を整列表示、未インストールは `(not installed)` と表示
+  - `brew` は macOS でのみ表示（Linux 環境のノイズを避ける）
+  - 個別インストール（Homebrew 外）の `claude` / `jailrun` / `deno` / `rustup` 系もセットアップ後に揃ったかを一目で確認できる
+- なぜ: セットアップ後にどのバージョンが入ったかを一目で確認できるようにするため
+
 ## 2026-04-19 WSL2 AppArmor 有効化サポート
 
 ### setup.sh
