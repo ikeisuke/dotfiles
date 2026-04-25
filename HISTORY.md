@@ -1,5 +1,19 @@
 # Change History
 
+## 2026-04-26 .gitignore の `.*` 一括除外を解消し CI ワークフローを追跡対象化
+
+### .gitignore
+- 先頭の `.*` (全ドットファイル/ディレクトリ除外) を削除
+- 副次的に不要になった例外指定を整理: `!/.claude/`, `!/.mcp.json` を削除
+- `/.claude/settings.local.json` は引き続き明示的に除外
+- `.DS_Store` / `.env*` / `.ssh/` / `.aws/` 等の secrets ルールはそのまま維持
+- なぜ: `.*` が `.github/` まで巻き込んで除外しており、`.github/workflows/lint.yml` が追跡されず CI として機能していなかったため。今後 `.cache/` や `.venv/` 等が出てきた場合は個別に追記する運用に切り替え
+
+### .github/workflows/lint.yml
+- 元々 working tree に存在していたが `.*` で gitignore されて追跡されていなかった CI ワークフローを追跡対象に追加
+- `shellcheck --severity=warning setup.sh` と全 zsh ファイルの `zsh -n` を main への push / PR で実行
+- なぜ: `.gitignore` 整理に伴い、本来意図されていた CI を初めて稼働させるため
+
 ## 2026-04-26 Claude Code 設定追加
 
 ### apps/claude/settings.json
