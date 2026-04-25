@@ -156,7 +156,8 @@
     "tools@ikeisuke-skills": true,
     "rust-analyzer-lsp@claude-plugins-official": true,
     "aidlc@ai-dlc-starter-kit": true,
-    "codex@openai-codex": true
+    "codex@openai-codex": true,
+    "claude-code-setup@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "ikeisuke-skills": {
@@ -186,5 +187,9 @@
   "effortLevel": "high",
   "autoMemoryEnabled": false,
   "skipDangerousModePermissionPrompt": true,
+  "verbose": true,
+  "remoteControlAtStartup": true,
+  "agentPushNotifEnabled": true,
+  "skipAutoPermissionPrompt": true,
   "voiceEnabled": true
 }

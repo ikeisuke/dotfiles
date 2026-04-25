@@ -1,5 +1,12 @@
 # Change History
 
+## 2026-04-26 Claude Code 設定追加
+
+### apps/claude/settings.json
+- `enabledPlugins` に `claude-code-setup@claude-plugins-official` を追加
+- 設定追加: `verbose=true`, `remoteControlAtStartup=true`, `agentPushNotifEnabled=true`, `skipAutoPermissionPrompt=true`
+- なぜ: リモート操作・通知・自動許可フローを常時有効化し、verbose 出力でデバッグ容易性を上げるため
+
 ## 2026-04-26 PostToolUse hook / bin/doctor / context7 MCP の追加
 
 ### .claude/settings.json (新規 / project-scoped)
