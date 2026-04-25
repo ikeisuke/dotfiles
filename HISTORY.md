@@ -1,5 +1,11 @@
 # Change History
 
+## 2026-04-26 actions/checkout を v4 → v6 に更新
+
+### .github/workflows/lint.yml
+- `actions/checkout@v4` (Node.js 20) → `actions/checkout@v6` (Node.js 24) に更新
+- なぜ: GitHub Actions が 2026-09-16 に Node.js 20 を runner から削除予定で、`@v4` のままだと将来動かなくなるため。初稼働時の deprecation 警告を解消
+
 ## 2026-04-26 .gitignore の `.*` 一括除外を解消し CI ワークフローを追跡対象化
 
 ### .gitignore
