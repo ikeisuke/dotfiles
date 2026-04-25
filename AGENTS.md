@@ -13,6 +13,8 @@
 
 - `zsh/` - モジュラーな zsh 設定（zshenv, zprofile, zshrc から各モジュールを読み込み）
 - `apps/` - アプリ個別設定（gh, ghostty, git, starship, tmux, vim, claude）
+- `bin/` - **PATH に通す汎用コマンド** (`setup.sh` が `~/.local/bin/` にリンク)。任意のリポジトリ/ディレクトリから呼べる前提のもののみ置く
+- `scripts/` - **dotfiles リポジトリ内専用のメンテナンス用スクリプト** (`./scripts/<name>` として叩く)。PATH には乗せない
 - `Brewfile` - Homebrew 依存管理
 - `setup.sh` - 初回セットアップスクリプト（シンボリックリンク作成、brew bundle 等）
 - AI エージェントのセキュリティラッパーは [jailrun](https://github.com/ikeisuke/jailrun) リポジトリに分離

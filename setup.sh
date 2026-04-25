@@ -250,6 +250,8 @@ if check_dependency tmux; then
 fi
 
 # ── bin ───────────────────────────────────────────────────
+# bin/ は PATH に通す汎用コマンドの置き場 (~/.local/bin にリンク)。
+# dotfiles 内部で叩くメンテナンススクリプトは scripts/ 側に置く。
 if [ -d "$DIR/bin" ]; then
   echo "bin"
   mkdir -p ~/.local/bin

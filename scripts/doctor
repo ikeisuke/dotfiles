@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
-# bin/doctor — dotfiles environment health check
+# scripts/doctor — dotfiles environment health check
 #
 # Read-only checks for environment drift (symlinks, Brewfile, tool versions,
 # platform-specific state). Pair with `./setup.sh` to apply fixes.
+#
+# Run from repo root: `./scripts/doctor` (not on PATH; this is a maintenance script).
 #
 # Exit codes:
 #   0  All checks passed (warnings allowed)

@@ -1,5 +1,21 @@
 # Change History
 
+## 2026-04-26 doctor を bin/ から scripts/ に移動 (PATH 配置とメンテ用の置き場分離)
+
+### scripts/doctor (旧 bin/doctor)
+- `bin/doctor` → `scripts/doctor` に `git mv`
+- `bin/` は PATH に通す汎用コマンドの置き場として運用し、dotfiles リポジトリ内でのみ叩くメンテナンス用スクリプトは `scripts/` に分けた
+- ヘッダコメントの "Run from repo root: `./scripts/doctor`" を追記し、PATH に乗せない旨を明示
+- doctor の Symlinks チェックでも `bin/*` ループから自身を除外する特例を削除
+
+### setup.sh
+- `bin/` ループに入れていた `doctor` 特例除外 (`[ "$name" = "doctor" ] && continue`) を削除
+- `bin/` セクション冒頭に「scripts/ との使い分け」をコメントで明記
+
+### AGENTS.md
+- 「リポジトリ構成」に `bin/` (PATH 通す汎用コマンド) と `scripts/` (リポジトリ内メンテ用) の使い分けルールを追記
+- なぜ: `gh-ruleset` のような汎用ツールは PATH に乗せたいが、`doctor` のように dotfiles のパス前提で固定された専用スクリプトは `bin/` に置くと特例分岐が必要になる。配置で意図を表現する規約に切り替えた
+
 ## 2026-04-26 actions/checkout を v4 → v6 に更新
 
 ### .github/workflows/lint.yml
