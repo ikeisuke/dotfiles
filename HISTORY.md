@@ -1,5 +1,41 @@
 # Change History
 
+## 2026-04-26 PostToolUse hook / bin/doctor / context7 MCP の追加
+
+### .claude/settings.json (新規 / project-scoped)
+- `PostToolUse` hook を追加: Edit/Write/MultiEdit 後に拡張子で振り分けて lint
+  - `*.sh` → `shellcheck --severity=warning`
+  - `*.zsh` / `*/zshrc` / `*/zshenv` / `*/zprofile` → `zsh -n`
+  - 結果は stderr に出力するのみ（`exit 0` で続行）。`command -v` でガードし未導入環境では何もしない
+  - 入力は stdin の JSON から `jq -r '.tool_input.file_path'` で取得
+- `enabledMcpjsonServers: ["context7"]` を追加して `.mcp.json` の context7 を自動有効化
+- なぜ: push 後に CI で気づいていた構文エラーを Edit 直後にローカルで検知し、Claude の自己修正ループを高速化するため
+
+### .mcp.json (新規 / project-scoped)
+- context7 (`@upstash/context7-mcp`) を npx 経由で起動する project-scoped MCP として登録
+- なぜ: dotfiles で扱う OSS ツール（starship / mise / lazygit / direnv 等）の docs 引きを WebFetch より低コンテキストで実現するため。man / `--help` では薄い設定ファイル書式の参照に有効
+- **採否再評価リマインダ**: 2026-05-26（採用から30日後）に呼び出し回数を確認し、月1回未満なら `.mcp.json` を削除する
+
+### .gitignore
+- `.*` で全ドットファイルを除外していたため、project-scoped 設定の追跡を有効化:
+  - `!/.claude/` で `.claude/` 配下を追跡対象に
+  - `/.claude/settings.local.json` で local 上書きは引き続き除外
+  - `!/.mcp.json` を追跡対象に
+
+### Brewfile
+- `shellcheck` を追加（PostToolUse hook で `*.sh` の lint に使用）
+
+### bin/doctor (新規)
+- dotfiles 環境の健全性チェックスクリプトを追加（純粋な bash、読み取り専用）
+- セクション:
+  - **Brewfile**: `brew bundle check --file=Brewfile` で不足パッケージ検出
+  - **Symlinks**: `setup.sh` が張る各シンボリックリンク（zsh / git / tmux / claude / gh / zeno / fzf / vim / ghostty / `bin/*`）の整合性確認
+  - **Tool Versions**: 主要ツールのバージョンを一覧表示（`setup.sh` 末尾と同じ範囲 + `shellcheck`）
+  - **Platform**: macOS / WSL2 / Linux を判定し、WSL2 では AppArmor の kernel/userspace 状態を確認
+- exit code: すべて OK or 警告のみ → `0` / 修正が必要な不整合あり → `1` / スクリプト異常 → `2`
+- 出力フォーマットは `setup.sh` の `✓` / `✗` / `⚠` と統一、`tput` で 8色端末のみカラー化
+- なぜ: `setup.sh` 実行後に Brewfile を更新したり手動でファイルを上書きしたりした際の環境ドリフトを `./bin/doctor` 一発で検知できるようにするため
+
 ## 2026-04-19 WSL2 AppArmor 有効化サポート
 
 ### setup.sh

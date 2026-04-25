@@ -3,6 +3,11 @@
 *.zwc.old
 .DS_Store
 
+# Track project-scoped Claude Code settings (but keep local overrides ignored)
+!/.claude/
+/.claude/settings.local.json
+!/.mcp.json
+
 # Secrets & credentials (safety net)
 .env*
 *.pem

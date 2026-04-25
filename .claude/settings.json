@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "enabledMcpjsonServers": ["context7"],
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(jq -r '.tool_input.file_path // empty' 2>/dev/null || true); [ -n \"$f\" ] || exit 0; case \"$f\" in *.sh) command -v shellcheck >/dev/null 2>&1 && shellcheck --severity=warning \"$f\" >&2 ;; *.zsh|*/zshrc|*/zshenv|*/zprofile) command -v zsh >/dev/null 2>&1 && zsh -n \"$f\" >&2 ;; esac; exit 0"
+          }
+        ]
+      }
+    ]
+  }
+}

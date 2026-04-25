@@ -30,6 +30,7 @@ brew "go"       # Go language
 
 # Testing
 brew "bats-core"  # Bash Automated Testing System
+brew "shellcheck" # Shell script static analysis (used by .claude PostToolUse hook)
 
 # Utilities (optional but recommended)
 brew "ripgrep"  # Fast grep (used by fzf preview, vim plugins)
