@@ -55,10 +55,30 @@ def fmt_reset(epoch):
     return f" {DIM}{m}m{R}"
 
 
-def fmt(label, pct, resets_at=None):
+def gradient_pace(pct):
+    if pct > 100:
+        return "\033[38;2;255;90;90m"
+    if pct > 85:
+        return "\033[38;2;255;180;80m"
+    if pct < 60:
+        return "\033[38;2;100;180;220m"
+    return "\033[38;2;100;200;120m"
+
+
+def fmt(label, pct, resets_at=None, window_seconds=0):
     p = round(pct)
-    reset = fmt_reset(resets_at)
-    return f"{label} {gradient(pct)}{braille_bar(pct)}{R} {p}%{reset}"
+    out = f"{label} {gradient(pct)}{braille_bar(pct)}{R} {p}%"
+    if resets_at and window_seconds > 0:
+        elapsed = window_seconds - max(resets_at - time.time(), 0)
+        if elapsed > 0:
+            elapsed_pct = elapsed / window_seconds * 100
+            projected = pct / elapsed * window_seconds
+            ep = round(elapsed_pct)
+            pj = round(projected)
+            pc = gradient_pace(projected)
+            out += f"{DIM}/{R}{ep}%{DIM} →{R}{pc}{pj}%{R}"
+    out += fmt_reset(resets_at)
+    return out
 
 
 SEP = f" {DIM}│{R} "
@@ -117,11 +137,11 @@ line2.append(f"ctx {bar_thresh} {bar_full} {p}%/{compact_pct}%")
 
 five_hr = data.get("rate_limits", {}).get("five_hour", {})
 five = five_hr.get("used_percentage") or 0
-line2.append(fmt("5h", five, five_hr.get("resets_at")))
+line2.append(fmt("5h", five, five_hr.get("resets_at"), 5 * 3600))
 
 seven_day = data.get("rate_limits", {}).get("seven_day", {})
 week = seven_day.get("used_percentage") or 0
-line2.append(fmt("7d", week, seven_day.get("resets_at")))
+line2.append(fmt("7d", week, seven_day.get("resets_at"), 7 * 86400))
 
 lines = [SEP.join(line1)]
 lines.append(SEP.join(line2))
