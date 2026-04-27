@@ -125,15 +125,16 @@ removed = cost_data.get("total_lines_removed") or 0
 line1.append(f"\033[38;2;80;200;80m+{added}{R} \033[38;2;255;100;80m-{removed}{R}")
 line1.append(f"{DIM}{time.strftime('%Y/%m/%d %H:%M:%S')}{R}")
 
-# Line 2: ctx (threshold bar + full bar) │ 5h │ 7d
+# Line 2: ctx │ 5h │ 7d
 line2 = []
 ctx = data.get("context_window", {}).get("used_percentage") or 0
 compact_pct = int(os.environ.get("CLAUDE_AUTOCOMPACT_PCT_OVERRIDE", "95"))
 threshold_ratio = min(ctx / compact_pct * 100, 100) if compact_pct > 0 else 0
-bar_thresh = f"{gradient(threshold_ratio)}{braille_bar(threshold_ratio)}{R}"
-bar_full = f"{gradient(ctx)}{braille_bar(ctx)}{R}"
+bar = f"{gradient(threshold_ratio)}{braille_bar(threshold_ratio)}{R}"
 p = round(ctx)
-line2.append(f"ctx {bar_thresh} {bar_full} {p}%/{compact_pct}%")
+tr = threshold_ratio
+tr_str = f"{int(tr)}" if tr == int(tr) else f"{tr:.1f}"
+line2.append(f"ctx {bar} {p}%{DIM}/{R}{compact_pct}%{DIM} →{R}{gradient(threshold_ratio)}{tr_str}%{R}")
 
 five_hr = data.get("rate_limits", {}).get("five_hour", {})
 five = five_hr.get("used_percentage") or 0
