@@ -1,5 +1,14 @@
 # Change History
 
+## 2026-05-06 claude/git: AskUserQuestion 前置きルール追加と scheduled_tasks.lock の ignore 追加
+
+### apps/claude/CLAUDE.md
+- AskUserQuestion で重要判断を問う前に「## まとめ／## 現状」セクションを必須化するルールを追加
+- commit メッセージ内バッククォートが zsh OOM クラッシュを誘発する旨の警告を追記
+
+### apps/git/gitignore
+- .claude/scheduled_tasks.lock を ignore 対象に追加 (Claude Code スケジューラの生成ファイルがリポジトリに混入しないようにするため)
+
 ## 2026-05-06 Brewfile: copilot-cli (GitHub Copilot CLI) をインストール対象に追加
 
 ### Brewfile
