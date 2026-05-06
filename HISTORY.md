@@ -1,5 +1,12 @@
 # Change History
 
+## 2026-05-06 Brewfile: copilot-cli (GitHub Copilot CLI) をインストール対象に追加
+
+### Brewfile
+- AI tools (cross-platform) セクションに `cask "copilot-cli"` を追加
+- 既存の codex (OpenAI) と同列に GitHub Copilot CLI も標準セットアップで揃うようにする
+- 注: cask は実体としては macOS のみで適用される (Linuxbrew では cask 行は無視されるため、cross-platform セクション内に置いても挙動は変わらない)
+
 ## 2026-04-27 statusline.py: ctx 表示を 5h/7d と統一フォーマットに整理
 
 ### apps/claude/statusline.py

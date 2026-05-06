@@ -54,6 +54,7 @@ brew "pulumi"   # Infrastructure as Code tool
 # AI tools (cross-platform)
 brew "opencode"       # OpenCode AI coding agent
 cask "codex"          # OpenAI Codex CLI
+cask "copilot-cli"    # GitHub Copilot CLI
 
 # Linux-specific tools (WSL)
 if OS.linux?
