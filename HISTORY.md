@@ -1,5 +1,14 @@
 # Change History
 
+## 2026-05-09 claude/CLAUDE.md: 構造整理 (h1→h2 統一、カテゴリ別並べ替え)
+
+### apps/claude/CLAUDE.md
+- `# トレードオフスライダー` を `## トレードオフスライダー` に変更し `# 個人設定` 配下に統一
+- 「改善の約束は行動で示す」をトレードオフスライダー配下から独立させ、`## 基本姿勢` 配下に再配置
+- カテゴリ別に並べ替え: 基本姿勢 / 対話ルール / コマンド実行ルール / git 運用 / エージェント連携 / 設定管理
+- typo 修正: `###  force push` (スペース 2 つ) → `### force push`
+- 内容変更なし。構造のみ整理
+
 ## 2026-05-06 claude/git: AskUserQuestion 前置きルール追加と scheduled_tasks.lock の ignore 追加
 
 ### apps/claude/CLAUDE.md
