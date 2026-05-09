@@ -100,12 +100,11 @@ codex exec resume <session-id> "追加の指示テキスト"
 
 ### 許可ルールの定期メンテナンス
 
-許可ルール（settings.json の permissions）が肥大化・陳腐化していないか定期的に確認する。
-`tools:suggest-permissions` スキルを使って最適化を提案させること。
+許可ルール（settings.json の permissions）が肥大化・陳腐化していないか定期的に確認し、最適化を提案させる。
 目安: 月1回、または User Rejected が多いと感じた時。
 
 ### セッションタイトル自動設定
 
 - hooks で自動設定済み（SessionStart hook でシェルコマンド直接実行）
-- 個別にタイトルを指定したい場合のみ `tools:session-title` スキルを使う
 - フォーマット: `リポジトリ名 / ブランチ名`
+- 必要に応じて手動でタイトルを変更可能

@@ -1,5 +1,13 @@
 # Change History
 
+## 2026-05-09 claude/CLAUDE.md: 特定スキル名 (tools:suggest-permissions, tools:session-title) の直書きを削除
+
+### apps/claude/CLAUDE.md
+- 「許可ルールの定期メンテナンス」「セッションタイトル自動設定」セクションからスキル名を削除
+- スキル discovery はスキル description の trigger に任せる方針 (「スキル優先呼び出し」ルールが既にメタとして担当)
+- メタ運用情報（月1回ペース、フォーマット、手動上書き可能）は維持
+- スキルが rename/削除された時に CLAUDE.md が腐らないよう結合度を下げた
+
 ## 2026-05-09 claude/CLAUDE.md: AIDLC 固有の参照 (validate-git.sh) を一般化
 
 ### apps/claude/CLAUDE.md
