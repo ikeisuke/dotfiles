@@ -86,6 +86,18 @@ gitコマンドは常にカレントディレクトリで実行する。`-C` オ
 
 特にリモートとローカルが分岐している（diverged）状態での force push はデータ消失リスクが高いため、push 前に `git status` 等で状態を確認する。
 
+### 例外: squash 直後の force push は確認不要
+
+以下の **すべて** を満たす場合、AskUserQuestion を経由せずに `git push --force-with-lease` を AI が直接実行してよい:
+
+1. 直前に squash（`/squash-unit` スキルまたは `squash-unit.sh`）を実行し、`squash:success:<hash>` を確認している
+2. `--force-with-lease`（または `--force-with-lease=<branch>:<expected-sha>`）を使用する（plain `--force` は対象外）
+3. push 対象ブランチが `cycle/*` / `unit/*` / その他作業ブランチ（main / master / リリースブランチ系統には適用しない）
+
+上記すべてを満たす場合のみ確認をスキップ可能。逸脱（plain `--force` を使う場合・main 系ブランチへの push・squash 由来でない force push）は従来通り 3 択提示が必須。
+
+push 前に `git status` でツリーが clean であることと、ローカル commit が squash 結果の単一 commit であることを確認すること。
+
 ## エージェント連携
 
 ### Codex CLI との連携

@@ -1,5 +1,13 @@
 # Change History
 
+## 2026-05-09 claude/CLAUDE.md: squash 直後の force push 例外ルール追加
+
+### apps/claude/CLAUDE.md
+- 「force push の AI 代行実行」セクションに例外条項を追加
+- squash 直後 (`squash:success:<hash>` 確認済) かつ `--force-with-lease` かつ作業ブランチ（cycle/* / unit/* 等）の 3 条件をすべて満たす場合は AskUserQuestion 経由不要
+- main / master / リリース系ブランチや plain `--force`、squash 由来でない force push は従来通り 3 択提示必須
+- push 前に tree clean と単一 commit 状態の確認を要求
+
 ## 2026-05-09 claude/CLAUDE.md: 外部スクリプト実行時のパイプ扱いルール追加
 
 ### apps/claude/CLAUDE.md
