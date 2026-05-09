@@ -64,7 +64,9 @@ gitコマンドは常にカレントディレクトリで実行する。`-C` オ
 
 ### force push の AI 代行実行
 
-`git push --force-with-lease` 等の force push 系操作で `validate-git.sh` が `status:diverged` を出力した場合、AI は AskUserQuestion で「AI 代行 / 中断 / 手動実行」を選択する 3 択を提示すること。「AI 代行」が選択された場合のみ AI が実行できる。デフォルトで「手動実行」前提とせず、明示的に許可を取る。
+`git push --force-with-lease` 等の force push 系操作を AI が実行する前に、AskUserQuestion で「AI 代行 / 中断 / 手動実行」の 3 択を提示すること。「AI 代行」が選択された場合のみ AI が実行できる。デフォルトで「手動実行」前提とせず、明示的に許可を取る。
+
+特にリモートとローカルが分岐している（diverged）状態での force push はデータ消失リスクが高いため、push 前に `git status` 等で状態を確認する。
 
 ## エージェント連携
 

@@ -1,5 +1,13 @@
 # Change History
 
+## 2026-05-09 claude/CLAUDE.md: AIDLC 固有の参照 (validate-git.sh) を一般化
+
+### apps/claude/CLAUDE.md
+- force push の AI 代行実行ルールから `validate-git.sh` / `status:diverged` の参照を削除
+- AIDLC スターターキット由来の hook を前提にしていたため、グローバル個人設定としては不適切だった
+- 一般化: 「AI が force push を実行する前に必ず 3 択を提示」とし、検出メカニズムへの依存を排除
+- diverged 時のリスクは補足として残し、AI 自身が `git status` で確認するよう明示
+
 ## 2026-05-09 claude/CLAUDE.md: 構造整理 (h1→h2 統一、カテゴリ別並べ替え)
 
 ### apps/claude/CLAUDE.md
