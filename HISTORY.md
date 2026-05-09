@@ -1,5 +1,13 @@
 # Change History
 
+## 2026-05-09 statusline.py: 5h/7d 消費量の小数表示を revert (上流データが整数のため)
+
+### apps/claude/statusline.py
+- 919b218 で導入した小数第 2 位表示を revert
+- Claude Code が statusline に渡す JSON の `rate_limits.{five_hour,seven_day}.used_percentage` および `context_window.used_percentage` は整数値のため、`{:.2f}` でフォーマットしても `.00` が付くだけで実質的な精度向上にならないことが判明（実機 JSON キャプチャで確認）
+- 5h/7d は JSON にトークン詳細が含まれないため、自前で小数精度を再計算することも不可能
+- 結論: 元の `round()` 整数表示に戻す
+
 ## 2026-05-09 statusline.py: 5h/7d 消費量を小数第 2 位まで表示
 
 ### apps/claude/statusline.py

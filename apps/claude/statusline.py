@@ -66,7 +66,8 @@ def gradient_pace(pct):
 
 
 def fmt(label, pct, resets_at=None, window_seconds=0):
-    out = f"{label} {gradient(pct)}{braille_bar(pct)}{R} {pct:.2f}%"
+    p = round(pct)
+    out = f"{label} {gradient(pct)}{braille_bar(pct)}{R} {p}%"
     if resets_at and window_seconds > 0:
         elapsed = window_seconds - max(resets_at - time.time(), 0)
         if elapsed > 0:
