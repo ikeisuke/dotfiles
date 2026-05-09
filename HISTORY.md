@@ -1,5 +1,13 @@
 # Change History
 
+## 2026-05-09 claude/CLAUDE.md: 外部スクリプト実行時のパイプ扱いルール追加
+
+### apps/claude/CLAUDE.md
+- 「コマンド実行ルール」配下に「外部スクリプト実行時のパイプの扱い」を追加
+- ファイル書き出し/ログ生成を伴うスクリプトの出力に `| head -N` `| tail -N` `> /dev/null` 等のバッファリング/切り詰めパイプを直結することを禁止
+- 理由: 出力が見えなくなり事後参照不可、`head` の SIGPIPE で上流が早期終了する可能性
+- 許容パターン: `script | tee /tmp/out.log | tail -n 50` のように tee で全出力を残し表示だけ絞る
+
 ## 2026-05-09 statusline.py: 5h/7d 消費量の小数表示を revert (上流データが整数のため)
 
 ### apps/claude/statusline.py
