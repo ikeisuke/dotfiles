@@ -1,5 +1,13 @@
 # Change History
 
+## 2026-05-09 statusline.py: 5h/7d 消費量を小数第 2 位まで表示
+
+### apps/claude/statusline.py
+- `fmt()` の使用率表示を `round()` から `{:.2f}` に変更
+- 5h / 7d の使用率が `42%` → `42.79%` のように小数第 2 位まで表示される
+- ctx の表示は対象外（リクエストが 5h/7d のみだったため）
+- 経過率（`/20%`）と予測率（`→250%`）は整数のまま（時間ベース・予測値で過剰精度は無意味）
+
 ## 2026-05-09 claude/CLAUDE.md: 特定スキル名 (tools:suggest-permissions, tools:session-title) の直書きを削除
 
 ### apps/claude/CLAUDE.md
