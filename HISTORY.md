@@ -1,5 +1,16 @@
 # Change History
 
+## 2026-05-09 claude/CLAUDE.md: サブエージェント委譲ルール追加と周辺整理
+
+### apps/claude/CLAUDE.md
+- 「エージェント連携」配下に「サブエージェント委譲を原則とする」を追加
+  - main context 節約のため、調査・探索・大量出力を伴う読み取り系タスクは原則 Agent tool に委譲する方針
+  - 直接実行してよい例外を 3 種に絞り（パス既知の単一 Read / 1 発 grep / 結果の生データを後続必須利用）、それ以外は委譲・迷ったら委譲のデフォルトに
+  - 組み込みサブエージェントの使い分けと並列化パターンも併記
+- force push の AI 代行実行ルールを簡素化（squash/amend 起源は確認不要、plain `--force` / main 系 / squash 由来でない場合はユーザー確認）
+- 設定ファイルのスコープに Local-scoped (`.claude/settings.local.json`) を追記
+- 許可ルールの定期メンテナンスセクションを削除
+
 ## 2026-05-09 claude/CLAUDE.md: squash 直後の force push 例外ルール追加
 
 ### apps/claude/CLAUDE.md

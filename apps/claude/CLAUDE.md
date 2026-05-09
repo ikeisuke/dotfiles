@@ -82,21 +82,8 @@ gitコマンドは常にカレントディレクトリで実行する。`-C` オ
 
 ### force push の AI 代行実行
 
-`git push --force-with-lease` 等の force push 系操作を AI が実行する前に、AskUserQuestion で「AI 代行 / 中断 / 手動実行」の 3 択を提示すること。「AI 代行」が選択された場合のみ AI が実行できる。デフォルトで「手動実行」前提とせず、明示的に許可を取る。
-
-特にリモートとローカルが分岐している（diverged）状態での force push はデータ消失リスクが高いため、push 前に `git status` 等で状態を確認する。
-
-### 例外: squash 直後の force push は確認不要
-
-以下の **すべて** を満たす場合、AskUserQuestion を経由せずに `git push --force-with-lease` を AI が直接実行してよい:
-
-1. 直前に squash（`/squash-unit` スキルまたは `squash-unit.sh`）を実行し、`squash:success:<hash>` を確認している
-2. `--force-with-lease`（または `--force-with-lease=<branch>:<expected-sha>`）を使用する（plain `--force` は対象外）
-3. push 対象ブランチが `cycle/*` / `unit/*` / その他作業ブランチ（main / master / リリースブランチ系統には適用しない）
-
-上記すべてを満たす場合のみ確認をスキップ可能。逸脱（plain `--force` を使う場合・main 系ブランチへの push・squash 由来でない force push）は従来通り 3 択提示が必須。
-
-push 前に `git status` でツリーが clean であることと、ローカル commit が squash 結果の単一 commit であることを確認すること。
+squashやamendして履歴をきれいにした場合、`git push --force-with-lease` の実行が必要であればユーザーに確認せずに実行する。
+ただし、`--force` を使う場合・main 系ブランチへの push・squash 由来でない force push）はユーザーに確認を行う
 
 ## エージェント連携
 
@@ -120,18 +107,31 @@ codex exec resume <session-id> "追加の指示テキスト"
 - `codex exec resume` で同じセッションのコンテキストを維持したまま追加指示を送れる
 - Bash ツールから実行可能（非対話モードで動作する）
 
+### サブエージェント委譲を原則とする
+
+調査・探索・大量出力を伴う読み取り系タスクは原則 Agent tool に委譲する。main context を節約するため。
+
+**直接実行してよい例外（これ以外は委譲）**:
+- パス既知の単一 Read
+- 特定シンボルの 1 発 grep / find
+- 結果の生データを後続 step で必ず使うケース
+
+迷ったら委譲する。
+
+**使い分け**:
+- ファイル/シンボル探索 → `Explore` (Haiku, 高速)
+- 設計プラン立案前のリサーチ → `Plan`
+- 探索 + 変更を伴うマルチステップ → `general-purpose`
+- 独立タスクは 1 message に複数 Agent tool use を含めて並列実行する
+
 ## 設定管理
 
 ### 設定ファイルのスコープ
 
 - User-scoped: `~/.claude/settings.json`
 - Project-scoped: `.claude/settings.json`
+- Local-scoped: `.claude/settings.local.json`
 - スコープが不明な場合は書き込む前にユーザーに確認すること
-
-### 許可ルールの定期メンテナンス
-
-許可ルール（settings.json の permissions）が肥大化・陳腐化していないか定期的に確認し、最適化を提案させる。
-目安: 月1回、または User Rejected が多いと感じた時。
 
 ### セッションタイトル自動設定
 
