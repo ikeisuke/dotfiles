@@ -1,5 +1,16 @@
 # Change History
 
+## 2026-05-11 setup.sh: Claude Code プラグイン update を汎用化し ai-dlc-starter-kit を追加
+
+### setup.sh
+- 旧コードは `tools@ikeisuke-skills` のみハードコードしていた
+- `update_claude_plugin <plugin@marketplace> <fallback-source-url>` 関数を導入し、複数プラグインを同じロジックで更新できるように
+- 関数の動作: `marketplace update` を試行 → 失敗時は `marketplace add` で追加 → `plugin update` を試行 → 失敗時は `plugin install --scope user`
+- 対象プラグイン:
+  - `tools@ikeisuke-skills` (既存)
+  - `aidlc@ai-dlc-starter-kit` (新規追加)
+- 新規 setup でも既存環境でも同じコマンドで自動的に install/update が走る
+
 ## 2026-05-10 Brewfile: Obsidian (Markdown note-taking) を追加
 
 ### Brewfile

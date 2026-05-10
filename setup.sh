@@ -408,13 +408,28 @@ if [ -d "$DIR/apps/claude" ]; then
 
   # Install/update plugins at user scope
   if command -v claude >/dev/null 2>&1; then
-    if claude plugins update tools@ikeisuke-skills >/dev/null 2>&1; then
-      echo "  ✓ Plugins updated"
-    else
-      claude plugins marketplace add \
-        https://raw.githubusercontent.com/ikeisuke/claude-skills/main/.claude-plugin/marketplace.json 2>/dev/null || true
-      run_quiet "Plugins installed" claude plugins install --scope user tools@ikeisuke-skills
-    fi
+    update_claude_plugin() {
+      local plugin="$1"
+      local marketplace="${plugin#*@}"
+      local source="$2"
+
+      # Refresh marketplace metadata; if absent, add it from the source URL
+      if ! claude plugin marketplace update "$marketplace" >/dev/null 2>&1; then
+        claude plugin marketplace add "$source" >/dev/null 2>&1 || true
+      fi
+
+      # Update plugin; if not installed yet, install at user scope
+      if claude plugin update "$plugin" >/dev/null 2>&1; then
+        echo "  ✓ Updated: $plugin"
+      else
+        run_quiet "Installed: $plugin" claude plugin install --scope user "$plugin"
+      fi
+    }
+
+    update_claude_plugin "tools@ikeisuke-skills" \
+      "https://raw.githubusercontent.com/ikeisuke/claude-skills/main/.claude-plugin/marketplace.json"
+    update_claude_plugin "aidlc@ai-dlc-starter-kit" \
+      "https://raw.githubusercontent.com/ikeisuke/ai-dlc-starter-kit/main/.claude-plugin/marketplace.json"
   fi
 fi
 
