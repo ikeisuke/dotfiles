@@ -91,6 +91,9 @@ if OS.mac?
   cask "google-drive"     # Google Drive sync client
   cask "logi-options+"    # Logitech mouse/keyboard settings
 
+  # Notes
+  cask "obsidian"         # Markdown-based note-taking / knowledge base
+
   # Development
   cask "docker-desktop"       # Docker Desktop
   cask "visual-studio-code"   # VS Code

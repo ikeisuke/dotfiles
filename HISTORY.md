@@ -1,5 +1,13 @@
 # Change History
 
+## 2026-05-10 Brewfile: Obsidian (Markdown note-taking) を追加
+
+### Brewfile
+- macOS セクション (`if OS.mac?` ブロック) に `cask "obsidian"` を追加
+- 新規 `# Notes` カテゴリとして配置（将来の note-taking 系アプリの受け皿）
+- Linux では brew 配布されていないため macOS のみ
+- 注: cask は実体としては macOS のみで適用される (Linuxbrew では cask 行は無視されるため、ガード自体は冗長だが既存ファイルの構造に合わせている)
+
 ## 2026-05-09 claude/CLAUDE.md: サブエージェント委譲ルールにテスト/ビルド実行を含め、判断基準を明確化
 
 ### apps/claude/CLAUDE.md
