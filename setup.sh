@@ -412,12 +412,29 @@ if [ -d "$DIR/apps/claude" ]; then
       local plugin="$1"
       local marketplace="${plugin#*@}"
       local source="$2"
+      local known="$HOME/.claude/plugins/known_marketplaces.json"
+      local install_dir="$HOME/.claude/plugins/marketplaces/$marketplace"
 
       # `claude plugin marketplace update` and `claude plugin update` return
       # exit code 0 even on failure, so exit codes are unreliable. Use the
-      # marketplace directory's existence as the registration check, and rely
-      # on `plugin install` being idempotent for the install/update step.
-      if [ ! -d "$HOME/.claude/plugins/marketplaces/$marketplace" ]; then
+      # filesystem and known_marketplaces.json instead, and rely on
+      # `plugin install` being idempotent for the install/update step.
+
+      # Migration: URL-source registrations save the marketplace as a single
+      # JSON file rather than a cloned directory, which breaks code that walks
+      # marketplaces/*/ as directories. If a URL-source entry is present, drop
+      # it so it can be re-added via GitHub source below.
+      if command -v jq >/dev/null 2>&1 && [ -f "$known" ]; then
+        if jq -e --arg name "$marketplace" \
+             '.[$name].source.source == "url"' "$known" >/dev/null 2>&1; then
+          claude plugin marketplace remove "$marketplace" >/dev/null 2>&1 || true
+          # Clean up leftover file/dir (guard against empty $marketplace to avoid rm -rf /)
+          [ -n "$marketplace" ] && rm -rf "$install_dir"
+        fi
+      fi
+
+      # Ensure marketplace is registered as a directory-backed source
+      if [ ! -d "$install_dir" ]; then
         run_quiet "Marketplace added: $marketplace" claude plugin marketplace add "$source"
       fi
 
@@ -431,10 +448,10 @@ if [ -d "$DIR/apps/claude" ]; then
       claude plugin update "$plugin" >/dev/null 2>&1 || true
     }
 
-    update_claude_plugin "tools@ikeisuke-skills" \
-      "https://raw.githubusercontent.com/ikeisuke/claude-skills/main/.claude-plugin/marketplace.json"
-    update_claude_plugin "aidlc@ai-dlc-starter-kit" \
-      "https://raw.githubusercontent.com/ikeisuke/ai-dlc-starter-kit/main/.claude-plugin/marketplace.json"
+    # Use GitHub repo identifiers (not raw marketplace.json URLs) so each
+    # marketplace is cloned as a directory under marketplaces/<name>/.
+    update_claude_plugin "tools@ikeisuke-skills" "ikeisuke/claude-skills"
+    update_claude_plugin "aidlc@ai-dlc-starter-kit" "ikeisuke/ai-dlc-starter-kit"
   fi
 fi
 

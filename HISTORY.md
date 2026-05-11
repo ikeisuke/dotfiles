@@ -1,5 +1,15 @@
 # Change History
 
+## 2026-05-11 setup.sh: Claude プラグイン marketplace を URL ソースから GitHub ソースに切り替え + 移行処理追加
+
+### setup.sh
+- 問題: `claude plugin marketplace add <raw-marketplace.json-URL>` で登録すると `source.source == "url"` として保存され、marketplace 実体が `~/.claude/plugins/marketplaces/<name>` に**ディレクトリではなくファイル**として保存される
+- 結果: ディレクトリを期待する処理（プラグイン解決等）が「ikeisuke-skills がディレクトリじゃない」エラーで失敗。削除しても URL ソース定義から自動再生成されるため恒久化していた
+- 修正:
+  1. `update_claude_plugin` の第 2 引数を raw URL から GitHub repo 識別子 (`ikeisuke/claude-skills`, `ikeisuke/ai-dlc-starter-kit`) に変更し、ディレクトリベースで clone されるようにした
+  2. 既存環境の URL ソース登録を検出する移行処理を追加: `known_marketplaces.json` をパースして `source.source == "url"` のエントリを `marketplace remove` + ディレクトリ/ファイル削除し、GitHub ソースで再登録
+  3. ガード: `[ -n "$marketplace" ]` で空変数による `rm -rf /` を防止
+
 ## 2026-05-11 setup.sh: Claude Code プラグインの install/update 判定を修正（exit code が信頼できない問題）
 
 ### setup.sh
