@@ -363,6 +363,21 @@ EOF
       echo "  ⚠ Missing packages:"
       echo "    sudo apt install$missing"
     fi
+
+    # securityfs mount (AppArmor プロファイル操作に必須)
+    # Linux kernel が AppArmor / SELinux 等の LSM (Linux Security Module) インターフェースを
+    # 公開する仮想ファイルシステム。WSL2 は自動マウントしないため /sys/kernel/security 配下が空。
+    # jailrun の AppArmor サンドボックスはここを読むため、起動毎マウントまたは fstab 永続化が必要。
+    if mountpoint -q /sys/kernel/security 2>/dev/null; then
+      echo "  ✓ securityfs mounted"
+    else
+      echo "  ⚠ securityfs (/sys/kernel/security) 未マウント (AppArmor サンドボックスに必要):"
+      echo "    一時マウント (現セッションのみ):"
+      echo "      sudo mount -t securityfs securityfs /sys/kernel/security"
+      echo "    永続マウント (推奨, /etc/fstab):"
+      echo "      echo 'securityfs /sys/kernel/security securityfs defaults 0 0' | sudo tee -a /etc/fstab"
+      echo "      sudo mount -a"
+    fi
   fi
 fi
 

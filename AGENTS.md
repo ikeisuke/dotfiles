@@ -37,3 +37,4 @@ WSL2 環境では dotfiles 側で `.wslconfig` の `kernelCommandLine` に
 - 変更時は `.bak.<timestamp>` バックアップを残す
 - 適用には Windows 側で `wsl --shutdown` が必要
 - userspace ツール未導入時は `sudo apt install apparmor apparmor-utils` を案内
+- securityfs (`/sys/kernel/security`) はカーネルが LSM インターフェースを公開する仮想 FS。WSL2 は自動マウントしないため、未マウントなら一時マウントコマンドと `/etc/fstab` 永続化手順を案内（sudo 実行は user 側に委ねる）

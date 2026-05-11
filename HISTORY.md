@@ -1,5 +1,16 @@
 # Change History
 
+## 2026-05-12 setup.sh / AGENTS.md: WSL2 securityfs 未マウントの案内を追加
+
+### setup.sh
+- WSL2 AppArmor セクション内で `/sys/kernel/security` のマウント状態を確認（`mountpoint -q`）
+- 未マウントなら一時マウント (`sudo mount -t securityfs ...`) と `/etc/fstab` 永続化手順を echo
+- sudo を伴う操作のため自動実行はせず案内のみ（既存 jailrun deps / apt 案内と同じパターン）
+- 背景: WSL2 は securityfs (LSM インターフェース仮想 FS) を自動マウントしない。AppArmor を kernel command line で有効化しても `/sys/kernel/security` 配下が空になり、jailrun の AppArmor サンドボックスがプロファイルを load できない
+
+### AGENTS.md
+- 「WSL2 AppArmor 有効化」セクションに securityfs マウント案内の責務を追記
+
 ## 2026-05-11 setup.sh: Obsidian AppImage symlink を obsidian-appimage に改名（Windows CLI との衝突回避）
 
 ### setup.sh
