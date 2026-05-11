@@ -373,7 +373,10 @@ fi
 if [ "$LINUX" = 1 ]; then
   echo "Obsidian"
   appimage_path="$HOME/.local/bin/Obsidian.AppImage"
-  symlink_path="$HOME/.local/bin/obsidian"
+  # 小文字 `obsidian` を避けるのは Windows 側の Obsidian CLI が同名ファイルを
+  # ~/.local/bin/ 等に書き込んで symlink を上書きする事象を確認したため。
+  # CamelCase の AppImage 本体は衝突しないので、別名 symlink で起動口を提供する。
+  symlink_path="$HOME/.local/bin/obsidian-appimage"
   mkdir -p "$HOME/.local/bin"
 
   if [ -x "$appimage_path" ]; then

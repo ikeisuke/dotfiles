@@ -1,5 +1,13 @@
 # Change History
 
+## 2026-05-11 setup.sh: Obsidian AppImage symlink を obsidian-appimage に改名（Windows CLI との衝突回避）
+
+### setup.sh
+- `~/.local/bin/obsidian` → `~/.local/bin/obsidian-appimage` に symlink 名を変更
+- 理由: Windows 版 Obsidian で CLI 機能を有効化すると、何らかの経路で同名 `obsidian` ファイルが書き込まれ symlink が上書きされる事象を確認
+- AppImage 本体 `~/.local/bin/Obsidian.AppImage` は CamelCase なので衝突せず存続
+- 既存環境の `~/.local/bin/obsidian` symlink は自動削除しない（破壊的操作回避）。不要なら手動で `rm` する
+
 ## 2026-05-11 setup.sh: Linux/WSL2 で Obsidian AppImage を自動 download
 
 ### setup.sh
