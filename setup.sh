@@ -366,6 +366,53 @@ EOF
   fi
 fi
 
+# ── Obsidian (Linux) ──────────────────────────────────────
+# Linux/WSL2 は公式 brew パッケージが無いため AppImage を ~/.local/bin/ に配置。
+# 既存 AppImage があれば download をスキップする idempotent な作り
+# （バージョン更新したい時は手動で AppImage を削除して再実行）。
+if [ "$LINUX" = 1 ]; then
+  echo "Obsidian"
+  appimage_path="$HOME/.local/bin/Obsidian.AppImage"
+  symlink_path="$HOME/.local/bin/obsidian"
+  mkdir -p "$HOME/.local/bin"
+
+  if [ -x "$appimage_path" ]; then
+    echo "  ✓ Already installed: $appimage_path"
+  elif ! command -v jq >/dev/null 2>&1; then
+    echo "  ⚠ jq not found. Run 'brew bundle' first."
+  else
+    case "$(uname -m)" in
+      aarch64|arm64) arch_suffix="-arm64" ;;
+      *)             arch_suffix="" ;;
+    esac
+    # 厳密マッチ: x86_64 (空サフィックス) で arm64 ビルドを拾わないよう
+    # バージョン部分を [0-9.]+ で囲み、$s 直後に .AppImage$ で終わる形にする
+    url=$(curl -fsSL https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest \
+            | jq -r --arg s "$arch_suffix" \
+                '.assets[] | select(.name | test("^Obsidian-[0-9.]+\($s)\\.AppImage$")) | .browser_download_url' \
+            | head -n 1)
+    if [ -z "$url" ]; then
+      echo "  ✗ Could not determine AppImage URL from GitHub releases"
+    else
+      run_quiet "Downloaded AppImage" curl -fsSL -o "$appimage_path" "$url"
+      chmod +x "$appimage_path"
+    fi
+  fi
+
+  if [ -x "$appimage_path" ]; then
+    ln -sfn "$appimage_path" "$symlink_path"
+    echo "  ✓ Linked: $symlink_path -> $appimage_path"
+  fi
+
+  # Ubuntu 22 系は libfuse2 が標準で入っていないため AppImage 実行時に
+  # "libfuse.so.2: cannot open shared object file" で失敗する。
+  # libfuse2 が無ければ apt 案内を出す（既存 jailrun パターンに合わせて echo のみ）。
+  if [ -x "$appimage_path" ] && ! command -v fusermount >/dev/null 2>&1; then
+    echo "  ⚠ libfuse2 が未インストール (AppImage 起動に必要):"
+    echo "    sudo apt install libfuse2"
+  fi
+fi
+
 # ── jailrun ───────────────────────────────────────────────
 echo "jailrun"
 if ! command -v ghq >/dev/null 2>&1; then

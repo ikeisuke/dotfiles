@@ -1,5 +1,15 @@
 # Change History
 
+## 2026-05-11 setup.sh: Linux/WSL2 で Obsidian AppImage を自動 download
+
+### setup.sh
+- 新規セクション `# ── Obsidian (Linux) ──` を追加（WSL2 AppArmor と jailrun の間に配置）
+- Linux/WSL2 環境で `~/.local/bin/Obsidian.AppImage` に AppImage を自動配置し、`~/.local/bin/obsidian` を小文字 symlink として作成
+- アーキテクチャ判定: `aarch64`/`arm64` で `-arm64` サフィックス付きビルド、それ以外は x86_64 ビルド
+- GitHub Releases API + jq で最新版 URL を取得（厳密マッチ `^Obsidian-[0-9.]+($s)\.AppImage$` で arm64 が x86_64 にヒットしないよう抑制）
+- 既存 AppImage があれば download をスキップする idempotent な作り（バージョン更新は手動削除）
+- Ubuntu 22 系は標準で libfuse2 が無く AppImage 実行時に `libfuse.so.2: cannot open shared object file` で失敗するため、`fusermount` の存在をチェックして `sudo apt install libfuse2` を案内（既存 jailrun と同じ echo パターン）
+
 ## 2026-05-11 setup.sh: Claude プラグイン marketplace を URL ソースから GitHub ソースに切り替え + 移行処理追加
 
 ### setup.sh
