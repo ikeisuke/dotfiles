@@ -1,5 +1,16 @@
 # Change History
 
+## 2026-05-11 setup.sh: Claude Code プラグインの install/update 判定を修正（exit code が信頼できない問題）
+
+### setup.sh
+- `update_claude_plugin` 関数の分岐ロジックを修正
+- 問題: `claude plugin marketplace update` および `claude plugin update` は **存在しない marketplace/プラグインに対しても exit code 0 を返す**（stdout にエラーが出るだけ）。そのため `if ! command` 分岐が機能せず、新規環境で `marketplace add` も `plugin install` もスキップされていた
+- 結果: 新規環境で `~/.claude/plugins/marketplaces/<name>` が作られず、後続の plugin 解決でエラー
+- 修正:
+  1. marketplace 登録チェックを `~/.claude/plugins/marketplaces/<name>` の有無で判定（exit code に頼らない）
+  2. `claude plugin install --scope user <plugin>` は冪等（既にインストール済みでも exit 0 で "already installed" を返す）なので、install/update の分岐を撤廃し常に install を実行
+  3. `marketplace update` と `plugin update` は best-effort の refresh として実行（exit code は信頼しない）
+
 ## 2026-05-11 setup.sh: Claude Code プラグイン update を汎用化し ai-dlc-starter-kit を追加
 
 ### setup.sh

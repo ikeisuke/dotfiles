@@ -413,17 +413,22 @@ if [ -d "$DIR/apps/claude" ]; then
       local marketplace="${plugin#*@}"
       local source="$2"
 
-      # Refresh marketplace metadata; if absent, add it from the source URL
-      if ! claude plugin marketplace update "$marketplace" >/dev/null 2>&1; then
-        claude plugin marketplace add "$source" >/dev/null 2>&1 || true
+      # `claude plugin marketplace update` and `claude plugin update` return
+      # exit code 0 even on failure, so exit codes are unreliable. Use the
+      # marketplace directory's existence as the registration check, and rely
+      # on `plugin install` being idempotent for the install/update step.
+      if [ ! -d "$HOME/.claude/plugins/marketplaces/$marketplace" ]; then
+        run_quiet "Marketplace added: $marketplace" claude plugin marketplace add "$source"
       fi
 
-      # Update plugin; if not installed yet, install at user scope
-      if claude plugin update "$plugin" >/dev/null 2>&1; then
-        echo "  ✓ Updated: $plugin"
-      else
-        run_quiet "Installed: $plugin" claude plugin install --scope user "$plugin"
-      fi
+      # Refresh marketplace metadata (best-effort; non-fatal)
+      claude plugin marketplace update "$marketplace" >/dev/null 2>&1 || true
+
+      # `plugin install` is idempotent: succeeds whether newly installed or already present
+      run_quiet "Plugin installed/updated: $plugin" claude plugin install --scope user "$plugin"
+
+      # Refresh plugin to latest version (best-effort; non-fatal)
+      claude plugin update "$plugin" >/dev/null 2>&1 || true
     }
 
     update_claude_plugin "tools@ikeisuke-skills" \
