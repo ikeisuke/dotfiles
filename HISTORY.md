@@ -1,5 +1,30 @@
 # Change History
 
+## 2026-05-13 apps/claude/CLAUDE.md / apps/codex/AGENTS.md: レベル B 圧縮（~30-40% 削減）
+
+### apps/claude/CLAUDE.md
+- 166 行 / 3,901 chars → **103 行 / 2,519 chars**（行数 -38%, 文字数 -35%）
+- 圧縮方針: WHY を 1 行残し、冗長な前置き・説明・例を削除（agents.md / Codex review 反映）
+- 主な変更:
+  - 「改善の約束」を 1 段落 + 簡潔な箇条書きに
+  - `$(...)` 禁止: 「注意」blockquote (PreToolUse hook) を 1 行に集約、趣旨は維持
+  - commit バッククォート禁止: WHY を 1 文に圧縮
+  - 外部スクリプトパイプの扱い: 禁止例 1 行集約、`2>&1` バリエーション削除
+  - 外部公開ローカルパス: 説明と例を圧縮、ただし「起票前 grep」は実行可能チェックなので維持
+  - Codex CLI 連携: コードブロック削除、3 行の bullet に
+  - サブエージェント委譲: 使い分け表→1 行化、cross-ref 削除
+- 削減した詳細経緯は HISTORY.md (各コミット履歴) に既に記録済みなので情報損失なし
+
+### apps/codex/AGENTS.md
+- 99 行 / 2,513 chars → **67 行 / 1,683 chars**（行数 -32%, 文字数 -33%）
+- Claude 側の共通セクションと**同一文面**に同期（基本姿勢 / 対話ルール / コマンド実行ルール / git 運用 / 設定管理）
+- Codex 固有「設定ファイルのスコープ」は Codex パスのまま維持
+
+### 圧縮レベルの判断根拠
+- 起動毎に system prompt として読み込まれる固定コストの削減
+- Codex 評価で「レベル B 妥当、ただし高リスク規則の WHY 1 行は残す」と推奨
+- agents.md の精神（AI 向け・action-oriented・README clutter 化を避ける）に整合
+
 ## 2026-05-13 apps/claude/CLAUDE.md: zsh OOM 警告を独立 h3 に抽出し Codex 側と構造を揃える
 
 ### apps/claude/CLAUDE.md
