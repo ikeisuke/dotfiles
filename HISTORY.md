@@ -1,5 +1,23 @@
 # Change History
 
+## 2026-05-13 apps/codex/AGENTS.md 新設 + setup.sh で ~/.codex/AGENTS.md を symlink 化
+
+### apps/codex/AGENTS.md (新規)
+- Codex グローバル設定 (`~/.codex/AGENTS.md`) を dotfiles 管理化するためのソースファイル
+- 内容は `apps/claude/CLAUDE.md` の汎用ルールを Codex 用に流用:
+  - 基本姿勢 (トレードオフスライダー / 改善の約束は行動で示す)
+  - 対話ルール (判断要求の前置き — `AskUserQuestion` 固有表現は外して汎用化)
+  - コマンド実行ルール (commit メッセージ内バッククォート禁止 / 外部スクリプト実行時のパイプの扱い)
+  - git 運用 (カレントディレクトリ / force push / 外部公開コンテンツでのローカルパス取扱い)
+  - 設定管理 (Global / Project / 一時上書き `AGENTS.override.md` のスコープ定義)
+- Claude Code 固有のルール (`$(...)` 禁止、サブエージェント委譲、Skill 優先呼び出し、Claude Code 用設定ファイルスコープ、セッションタイトル、Codex CLI 連携) は除外
+- `~/.codex/AGENTS.md` は従来 0 byte で実体なし。ソース化することで Claude 側と同じ symlink パターンに揃える
+
+### setup.sh
+- 新規セクション `# ── Codex ───` を Claude Code セクション直後に追加
+- `link_and_backup "$DIR/apps/codex/AGENTS.md" ~/.codex/AGENTS.md` で symlink 化
+- 既存の空 `~/.codex/AGENTS.md` は `link_and_backup` 内で自動バックアップされる
+
 ## 2026-05-12 AGENTS.md: テンプレ準拠で拡張 (Project overview / Tech stack / Setup commands / 品質チェック / Security rules / 既知の落とし穴 / 慎重に扱う領域 / AI エージェント向けファイル運用)
 
 ### AGENTS.md

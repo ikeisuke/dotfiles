@@ -520,6 +520,13 @@ if [ -d "$DIR/apps/claude" ]; then
   fi
 fi
 
+# ── Codex ─────────────────────────────────────────────────
+if [ -d "$DIR/apps/codex" ]; then
+  echo "Codex"
+  mkdir -p ~/.codex
+  link_and_backup "$DIR/apps/codex/AGENTS.md" ~/.codex/AGENTS.md
+fi
+
 # ── GitHub CLI ────────────────────────────────────────────
 if [ -d "$DIR/apps/gh" ]; then
   echo "GitHub CLI"
