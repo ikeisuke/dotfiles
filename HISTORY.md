@@ -1,5 +1,14 @@
 # Change History
 
+## 2026-05-12 claude/CLAUDE.md: 外部公開コンテンツでのローカルパス取扱いルール追加
+
+### apps/claude/CLAUDE.md
+- 「git 運用」配下に「外部公開コンテンツでのローカルパス取扱い」を追加
+- GitHub Issue / PR / コミットメッセージ / 公開 Markdown / gist 等にホーム配下絶対パス・API トークン・内部 host 名を直書き禁止
+- 推奨置換 (`~/...`, repo-relative path, プレースホルダ) と例外（ローカル作業ログは生パス可）を併記
+- 起票前チェックとして `grep -nE '/Users/|/home/[^/]+/|C:\\Users\\' <body-file>` を案内
+- きっかけ: ai-dlc-starter-kit Issue #703 起票時に `/Users/<name>/...` を本文に含めてしまった事故
+
 ## 2026-05-12 setup.sh / AGENTS.md: WSL2 securityfs 未マウントの案内を追加
 
 ### setup.sh

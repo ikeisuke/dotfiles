@@ -85,6 +85,24 @@ gitコマンドは常にカレントディレクトリで実行する。`-C` オ
 squashやamendして履歴をきれいにした場合、`git push --force-with-lease` の実行が必要であればユーザーに確認せずに実行する。
 ただし、`--force` を使う場合・main 系ブランチへの push・squash 由来でない force push）はユーザーに確認を行う
 
+### 外部公開コンテンツでのローカルパス取扱い
+
+GitHub Issue / PR の本文・コメント、コミットメッセージ、公開リポジトリの Markdown、pastebin / gist 等の**外部公開コンテンツにはホーム配下絶対パス・認証情報・内部 host 名を直書きしない**。ユーザー名や環境情報が露呈する。
+
+**禁止例**:
+- `/Users/<name>/...`、`/home/<name>/...`、`C:\Users\<name>\...` 等のホーム配下絶対パス
+- API トークン / 認証情報
+- 内部 host 名 / 社内 URL
+
+**推奨置換**:
+- ホーム配下 → `~/...`
+- リポジトリ配下 → repo-relative path（backtick 囲み、例: `` `bin/foo.sh` ``）
+- 環境固有 prefix → プレースホルダ（例: `<homebrew-prefix>/bin/codex`）
+
+**例外**: ローカル shell ログ / `/tmp/...` 中間ファイル等、外部公開しない作業ログは生パスのまま可。
+
+**起票前チェック**: `gh issue create --body-file <f>` / `gh pr create --body-file <f>` 実行前に `grep -nE '/Users/|/home/[^/]+/|C:\\Users\\' <f>` で目視確認。
+
 ## エージェント連携
 
 ### Codex CLI との連携
