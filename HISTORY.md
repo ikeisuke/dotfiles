@@ -1,5 +1,16 @@
 # Change History
 
+## 2026-05-12 AGENTS.md: テンプレ準拠で拡張 (Project overview / Tech stack / Setup commands / 品質チェック / Security rules / 既知の落とし穴 / 慎重に扱う領域 / AI エージェント向けファイル運用)
+
+### AGENTS.md
+- 棚卸し結果: CLAUDE.md (root) は既に `@AGENTS.md` のみで薄く、`.claude/settings.json` の PostToolUse hook で shellcheck/zsh -n を自動実行 (強制処理は既に script/hook 側に寄っている)
+- AGENTS.md を「全 AI エージェント共通の正本」と位置付け、テンプレに沿ったセクションを追加
+  - プロジェクト概要 / 技術スタック / セットアップコマンド / 品質チェック / コーディングルール / セキュリティルール / 既知の落とし穴 / 慎重に扱う領域
+  - 既存セクション（変更履歴の記録 / リポジトリ構成 / WSL2 AppArmor 有効化）はそのまま温存
+- 末尾に「AI エージェント向けファイルの運用」セクションを追加: AGENTS.md / CLAUDE.md / `.claude/rules/` の役割分担と「強制は CI/hook/script 側」のメタルールを明示
+- 見出しは既存スタイルに合わせて日本語に統一
+- CLAUDE.md (root) と `.claude/rules/` は変更なし（小さい構成のためサブ分割不要）
+
 ## 2026-05-12 claude/CLAUDE.md: 外部公開コンテンツでのローカルパス取扱いルール追加
 
 ### apps/claude/CLAUDE.md
