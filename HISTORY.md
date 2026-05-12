@@ -1,5 +1,13 @@
 # Change History
 
+## 2026-05-13 apps/claude/CLAUDE.md: zsh OOM 警告を独立 h3 に抽出し Codex 側と構造を揃える
+
+### apps/claude/CLAUDE.md
+- 「シェルコマンド置換 `$(...)` の絶対禁止」セクション内のサブ箇条書きに埋没していた「commit メッセージ内のバッククォート禁止 (zsh OOM)」警告を独立 h3 として抽出
+- 抽出後は `apps/codex/AGENTS.md` と同じタイトル・内容・配置になり、両ファイルの共通セクション（基本姿勢 / 対話ルール / コマンド実行ルール / git 運用 / 設定管理）の構造が揃った
+- Claude 固有セクション（スキル優先呼び出し / `$(...)` 禁止 / エージェント連携 / セッションタイトル）は据え置き
+- 整理方針 A: 構造を揃える + 重複は許容（DRY 化せず両ファイル独立管理）
+
 ## 2026-05-13 apps/codex/AGENTS.md 新設 + setup.sh で ~/.codex/AGENTS.md を symlink 化
 
 ### apps/codex/AGENTS.md (新規)
