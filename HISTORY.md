@@ -1,5 +1,18 @@
 # Change History
 
+## 2026-05-13 AGENTS.md: 個人グローバル AI 設定のソース管理 / 編集ポリシーを追記
+
+### AGENTS.md
+- 「AI エージェント向けファイルの運用」セクションの最後の bullet を拡張
+- 追記内容:
+  - 個人グローバル AI 設定の symlink 配置を明記: `apps/claude/CLAUDE.md` → `~/.claude/CLAUDE.md`, `apps/codex/AGENTS.md` → `~/.codex/AGENTS.md`
+  - 編集ポリシーを明文化:
+    - 共通セクションは両ファイル同一文面を維持
+    - 固有セクションは対象ツール固有の内容のみ
+    - 詳細な WHY は HISTORY.md 側、本体には高リスク規則の WHY 1 行のみ
+    - 圧縮ポリシーは agents.md 精神に従いレベル B 粒度を基準
+- 直近の Codex 連携追加 + レベル B 圧縮作業を運用ルールとして固定化
+
 ## 2026-05-13 apps/claude/CLAUDE.md / apps/codex/AGENTS.md: レベル B 圧縮（~30-40% 削減）
 
 ### apps/claude/CLAUDE.md
