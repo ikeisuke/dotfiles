@@ -456,6 +456,15 @@ else
   run_quiet "Installed" make -C "$(ghq root)/github.com/ikeisuke/jailrun" install
 fi
 
+# ── Agents (共通 AI エージェント設定) ──────────────────────
+# apps/claude/CLAUDE.md が `@~/.agents/AGENTS.md` で取り込む共通原本。
+# apps/codex/AGENTS.md は apps/agents/AGENTS.md への symlink (リポジトリ内)。
+if [ -d "$DIR/apps/agents" ]; then
+  echo "Agents"
+  mkdir -p ~/.agents
+  link_and_backup "$DIR/apps/agents/AGENTS.md" ~/.agents/AGENTS.md
+fi
+
 # ── Claude Code ───────────────────────────────────────────
 if [ -d "$DIR/apps/claude" ]; then
   echo "Claude Code"

@@ -98,10 +98,11 @@ WSL2 環境では dotfiles 側で `.wslconfig` の `kernelCommandLine` に
 - 強制したい処理は markdown ではなく CI / hook / script 側に寄せる（例: `.claude/settings.json` の PostToolUse で shellcheck/zsh -n を自動実行）
 - ルールが領域別に長くなった場合は `.claude/rules/<area>.md` に分割する (現状は不要)
 - 個人のグローバル AI 設定は本リポジトリで管理し symlink 配置する（このリポジトリの `AGENTS.md` / `CLAUDE.md` には書かない）:
-  - `apps/claude/CLAUDE.md` → `~/.claude/CLAUDE.md` (Claude Code 用)
-  - `apps/codex/AGENTS.md` → `~/.codex/AGENTS.md` (Codex CLI 用)
+  - `apps/agents/AGENTS.md` → `~/.agents/AGENTS.md` （共通原本）
+  - `apps/claude/CLAUDE.md` → `~/.claude/CLAUDE.md` （Claude Code 用、冒頭で `@~/.agents/AGENTS.md` を import）
+  - `apps/codex/AGENTS.md` → `~/.codex/AGENTS.md` （Codex CLI 用、`apps/codex/AGENTS.md` 自体が `../agents/AGENTS.md` への symlink）
 - 個人グローバル設定の編集ポリシー:
-  - 共通セクション (基本姿勢 / 対話ルール / コマンド実行ルール / git 運用 / 設定管理) は Claude / Codex 両ファイルで**同一文面**を保つ
-  - 固有セクションは対象ツール固有の内容のみ (Claude: スキル / `$(...)` / エージェント連携 / セッションタイトル等)
+  - 共通ルール（基本姿勢 / 対話ルール / コマンド実行ルール / git 運用）は `apps/agents/AGENTS.md` に書く
+  - 各ツール固有のルールは `apps/claude/CLAUDE.md` / `apps/codex/AGENTS.md` に書く（Codex 固有は現状なしのため symlink で済んでいる）
   - 詳細な WHY は HISTORY.md に残し、本体には**高リスク規則の WHY 1 行のみ**（起動毎の system prompt 読込コスト削減）
   - 圧縮ポリシー: [agents.md](https://agents.md/) 精神 (action-oriented、AI 向け、README clutter を避ける) に従い、レベル B 粒度を基準とする

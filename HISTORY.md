@@ -1,5 +1,31 @@
 # Change History
 
+## 2026-05-13 apps/agents/AGENTS.md 新設で共通原本化 (Claude は @import、Codex は symlink chain)
+
+### apps/agents/AGENTS.md (新規)
+- Claude / Codex グローバル設定の共通部分（基本姿勢 / 対話ルール / コマンド実行ルール / git 運用）を抽出した共通原本
+- ~/.agents/AGENTS.md の symlink 先となる
+
+### apps/claude/CLAUDE.md
+- 冒頭で `@~/.agents/AGENTS.md` を import するように書き換え
+- Claude Code 固有セクション（スキル / `$(...)` / Codex CLI / サブエージェント / settings.json スコープ / セッションタイトル）は `## Claude Code 固有` 配下の単一 h2 にまとめた
+  - 理由: @import は共通の `## 基本姿勢` 等を展開するため、Claude 固有を同じ h2 配下に extend できない
+- 103 → 45 行（-56%）に削減
+
+### apps/codex/AGENTS.md
+- ファイル実体を削除し `../agents/AGENTS.md` への symlink に変更
+- `~/.codex/AGENTS.md` → `apps/codex/AGENTS.md` → `apps/agents/AGENTS.md` の 2 段 chain となる
+- Codex 固有「設定ファイルのスコープ」section は削除（AI 行動に不要なリファレンス情報）
+
+### setup.sh
+- 新規セクション `# ── Agents (共通 AI エージェント設定) ──` を jailrun と Claude Code の間に追加
+- `link_and_backup "$DIR/apps/agents/AGENTS.md" ~/.agents/AGENTS.md` で symlink 化
+
+### 動機
+- 共通ルールの単一情報源化（DRY）
+- 編集時の手動同期コスト削減
+- `@import` パス展開は Claude Code 公式が `@~/...` をサポート（claude-code-guide で確認）
+
 ## 2026-05-13 AGENTS.md: 個人グローバル AI 設定のソース管理 / 編集ポリシーを追記
 
 ### AGENTS.md
