@@ -1,5 +1,19 @@
 # Change History
 
+## 2026-05-14 Codex CLI のインストールを Homebrew cask から npm に変更
+
+### Brewfile
+- `cask "codex"` を削除
+- コメントで npm 管理への移行を明記（Claude Code と同様、cask より npm の方が更新が速い）
+
+### setup.sh
+- Codex セクションに `npm install -g @openai/codex` を追加（Claude Code の npm install と同じパターン）
+- `command -v npm` ガード付き
+
+### 補足
+- npm パッケージ `@openai/codex` の latest は cask 版と同バージョン (0.130.0) を確認
+- 既存環境で cask 版が残る場合は `brew uninstall --cask codex` で手動削除（`brew bundle` は未記載パッケージを自動削除しない）
+
 ## 2026-05-13 apps/agents/AGENTS.md 新設で共通原本化 (Claude は @import、Codex は symlink chain)
 
 ### apps/agents/AGENTS.md (新規)

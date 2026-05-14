@@ -534,6 +534,11 @@ if [ -d "$DIR/apps/codex" ]; then
   echo "Codex"
   mkdir -p ~/.codex
   link_and_backup "$DIR/apps/codex/AGENTS.md" ~/.codex/AGENTS.md
+
+  # Install/update Codex CLI via npm (official method)
+  if command -v npm >/dev/null 2>&1; then
+    run_quiet "Codex CLI installed/updated" npm install -g @openai/codex
+  fi
 fi
 
 # ── GitHub CLI ────────────────────────────────────────────

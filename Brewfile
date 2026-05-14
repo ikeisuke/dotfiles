@@ -53,8 +53,9 @@ brew "pulumi"   # Infrastructure as Code tool
 
 # AI tools (cross-platform)
 brew "opencode"       # OpenCode AI coding agent
-cask "codex"          # OpenAI Codex CLI
 cask "copilot-cli"    # GitHub Copilot CLI
+# codex (OpenAI Codex CLI): npm install -g @openai/codex (setup.sh, 公式の方法)
+# Claude Code と同様、cask より npm の方が更新が速いため npm 管理に統一
 
 # Linux-specific tools (WSL)
 if OS.linux?
